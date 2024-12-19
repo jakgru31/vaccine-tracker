@@ -78,7 +78,9 @@ fun RegistrationScreen() {
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                if (email.isNotBlank() && password.isNotBlank() && password == confirmPassword) {
+                if (email.isNotBlank() && emailValidator(email)
+                    && password.isNotBlank() && password == confirmPassword
+                    && passwordValidator(password)) {
                     auth.createUserWithEmailAndPassword(email.trim(), password.trim())
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
@@ -111,6 +113,12 @@ fun RegistrationScreen() {
             Text(text = it)
         }
     }
+}
+private fun passwordValidator(password: String): Boolean {
+    return (password.length >= 8) && (password.contains(Regex("[0-9]"))) && (password.contains("[A-Z]"))
+}
+private fun emailValidator(email: String): Boolean {
+    return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
 }
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
