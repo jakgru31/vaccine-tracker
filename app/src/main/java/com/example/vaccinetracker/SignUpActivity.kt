@@ -84,6 +84,7 @@ fun RegistrationScreen(
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
+                val k = passwordValidator(password)
                 if (email.isNotBlank() && emailValidator(email)
                     && password.isNotBlank() && password == confirmPassword
                     && passwordValidator(password)) {
@@ -119,7 +120,11 @@ fun RegistrationScreen(
     }
 }
 private fun passwordValidator(password: String): Boolean {
-    return (password.length >= 8) && (password.contains(Regex("[0-9]"))) && (password.contains("[A-Z]")) && (password.contains("[!@#\$%^&*(),.?\":{}|<>]"))
+    return (password.length >= 8) &&
+            (password.contains(Regex("[0-9]"))) &&
+            (password.contains(Regex("[A-Z]"))) &&
+            (password.contains(Regex("[!@#\$%^&*(),.?\":{}|<>]")))
+
 }
 private fun emailValidator(email: String): Boolean {
     return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
