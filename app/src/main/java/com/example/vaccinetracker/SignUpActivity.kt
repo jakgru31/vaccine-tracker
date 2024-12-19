@@ -29,13 +29,19 @@ class SignUpActivity : ComponentActivity() {
         setContent {
             enableEdgeToEdge()
             RegistrationScreen(
+                onSignUpSuccess = {
+                    val intent = Intent(this, LoginActivity::class.java)
+                    startActivity(intent)
+                }
             )
         }
     }
 }
 
 @Composable
-fun RegistrationScreen() {
+fun RegistrationScreen(
+    onSignUpSuccess: () -> Unit = {}
+) {
     val auth = FirebaseAuth.getInstance()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -84,9 +90,7 @@ fun RegistrationScreen() {
                     auth.createUserWithEmailAndPassword(email.trim(), password.trim())
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                successMessage = "Registration successful!"
-                                errorMessage = null
-                                //TODO: Navigate to Login screen
+                                onSignUpSuccess()
 
                             } else {
                                 errorMessage = task.exception?.message
@@ -127,7 +131,9 @@ private fun emailValidator(email: String): Boolean {
 fun RegistrationScreenPreview() {
     VaccineTrackerTheme {
         Scaffold { innerPadding ->
-            RegistrationScreen()
+            RegistrationScreen(
+                onSignUpSuccess = {}
+            )
         }
     }
 }

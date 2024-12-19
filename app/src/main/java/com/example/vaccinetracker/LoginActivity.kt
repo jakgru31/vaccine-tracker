@@ -1,6 +1,7 @@
 package com.example.vaccinetracker
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -35,7 +36,8 @@ class LoginActivity: ComponentActivity() {
         setContent {
             LogInScreen(
                 onSignUpClick = {
-                    // TODO: Navigate to Sign Up screen
+                    val intent = Intent(this, SignUpActivity::class.java)
+                    startActivity(intent)
                 },
                 onSignInSuccess = {
                     // TODO: Navigate to Home screen
