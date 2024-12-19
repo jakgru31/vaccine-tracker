@@ -115,7 +115,7 @@ fun RegistrationScreen() {
     }
 }
 private fun passwordValidator(password: String): Boolean {
-    return (password.length >= 8) && (password.contains(Regex("[0-9]"))) && (password.contains("[A-Z]"))
+    return (password.length >= 8) && (password.contains(Regex("[0-9]"))) && (password.contains("[A-Z]")) && (password.contains("[!@#\$%^&*(),.?\":{}|<>]"))
 }
 private fun emailValidator(email: String): Boolean {
     return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
