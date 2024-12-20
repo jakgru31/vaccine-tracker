@@ -28,12 +28,14 @@ class SignUpActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             enableEdgeToEdge()
-            RegistrationScreen(
-                onSignUpSuccess = {
-                    val intent = Intent(this, LoginActivity::class.java)
-                    startActivity(intent)
-                }
-            )
+            VaccineTrackerTheme {
+                RegistrationScreen(
+                    onSignUpSuccess = {
+                        val intent = Intent(this, LoginActivity::class.java)
+                        startActivity(intent)
+                    }
+                )
+            }
         }
     }
 }
@@ -59,7 +61,7 @@ fun RegistrationScreen(
         TextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Emailll") },
+            label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
         )

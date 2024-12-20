@@ -6,12 +6,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -22,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,16 +37,18 @@ class LoginActivity: ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            LogInScreen(
-                onSignUpClick = {
-                    val intent = Intent(this, SignUpActivity::class.java)
-                    startActivity(intent)
-                },
-                onSignInSuccess = {
-                    val intent = Intent(this, MainActivity::class.java)
-                    startActivity(intent)
-                }
-            )
+            VaccineTrackerTheme {
+                LogInScreen(
+                    onSignUpClick = {
+                        val intent = Intent(this, SignUpActivity::class.java)
+                        startActivity(intent)
+                    },
+                    onSignInSuccess = {
+                        val intent = Intent(this, MainActivity::class.java)
+                        startActivity(intent)
+                    }
+                )
+            }
         }
     }
 }
@@ -65,7 +70,9 @@ fun LogInScreen(
     Column (
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TextField(
             value = email,
@@ -102,6 +109,10 @@ fun LogInScreen(
                     errorMessage = "Please fill out all the fields"
                 }
             },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Sign In")
