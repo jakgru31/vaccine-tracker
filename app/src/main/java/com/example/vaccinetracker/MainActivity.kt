@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
             VaccineTrackerTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-                        name = "Android",
+                        ver = "0.01a",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -31,9 +31,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
+fun Greeting(ver: String, modifier: Modifier = Modifier) {
     Text(
-        text = "Hello $name!",
+        text = "Version $ver!",
         modifier = modifier
     )
 }
@@ -42,6 +42,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
     VaccineTrackerTheme {
-        Greeting("Android")
+        Greeting("0.01a")
     }
 }

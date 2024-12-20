@@ -40,7 +40,8 @@ class LoginActivity: ComponentActivity() {
                     startActivity(intent)
                 },
                 onSignInSuccess = {
-                    // Update the UI with the "Hello there" message
+                    val intent = Intent(this, MainActivity::class.java)
+                    startActivity(intent)
                 }
             )
         }
@@ -120,7 +121,7 @@ fun LogInScreen(
             Text(text = it)
         }
 
-        // Display the login status (Hello there) in a TextField
+        // Display the login status (Hello there) in a TextField (only while WIP)
         TextField(
             value = logInStatus,
             onValueChange = {},
