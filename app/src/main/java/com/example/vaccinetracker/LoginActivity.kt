@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -74,6 +77,26 @@ fun LogInScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+             Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+             ) {
+                Text(
+                    text = "Welcome to Vaccine Tracker",
+                    fontSize = MaterialTheme.typography.headlineSmall.fontSize,
+                    fontStyle = MaterialTheme.typography.headlineSmall.fontStyle,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+        }
+
+
         TextField(
             value = email,
             onValueChange = { email = it },
@@ -110,19 +133,22 @@ fun LogInScreen(
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = Color(0xFFFFD700),
+                contentColor = Color.Black
+
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Sign In")
         }
 
-        Spacer(modifier = Modifier.padding(8.dp))
-
         OutlinedButton(
             onClick = onSignUpClick,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = Color(0xFFE0B400)
+            )
+
         ) {
             Text("Sign Up")
         }
@@ -133,12 +159,10 @@ fun LogInScreen(
         }
 
         // Display the login status (Hello there) in a TextField (only while WIP)
-        TextField(
-            value = logInStatus,
-            onValueChange = {},
-            label = { Text("Log In Status") },
+        Text(
+            text = logInStatus,
             modifier = Modifier.fillMaxWidth(),
-            readOnly = true  // Make it read-only so the user cannot edit this field
+            color = Color(0xFFFF0000)
         )
     }
 }

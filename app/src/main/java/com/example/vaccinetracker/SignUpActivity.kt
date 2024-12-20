@@ -17,8 +17,12 @@ import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.material3.TextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import java.util.Calendar
@@ -58,6 +62,26 @@ fun RegistrationScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Sign Up for Vaccine Tracker",
+                    fontSize = MaterialTheme.typography.headlineSmall.fontSize,
+                    fontStyle = MaterialTheme.typography.headlineSmall.fontStyle,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+        }
+
         TextField(
             value = email,
             onValueChange = { email = it },
@@ -105,7 +129,11 @@ fun RegistrationScreen(
                     successMessage = null
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFFFD700),
+                contentColor = Color.Black
+            ),
         ) {
             Text("Register")
         }
