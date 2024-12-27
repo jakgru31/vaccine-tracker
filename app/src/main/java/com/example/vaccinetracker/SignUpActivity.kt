@@ -17,8 +17,12 @@ import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.material3.TextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import java.util.Calendar
@@ -28,14 +32,22 @@ class SignUpActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             enableEdgeToEdge()
-            RegistrationScreen(
-            )
+            VaccineTrackerTheme {
+                RegistrationScreen(
+                    onSignUpSuccess = {
+                        val intent = Intent(this, LoginActivity::class.java)
+                        startActivity(intent)
+                    }
+                )
+            }
         }
     }
 }
 
 @Composable
-fun RegistrationScreen() {
+fun RegistrationScreen(
+    onSignUpSuccess: () -> Unit = {}
+) {
     val auth = FirebaseAuth.getInstance()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -50,6 +62,26 @@ fun RegistrationScreen() {
             .padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Sign Up for Vaccine Tracker",
+                    fontSize = MaterialTheme.typography.headlineSmall.fontSize,
+                    fontStyle = MaterialTheme.typography.headlineSmall.fontStyle,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+        }
+
         TextField(
             value = email,
             onValueChange = { email = it },
@@ -78,13 +110,14 @@ fun RegistrationScreen() {
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                if (email.isNotBlank() && password.isNotBlank() && password == confirmPassword) {
+                val k = passwordValidator(password)
+                if (email.isNotBlank() && emailValidator(email)
+                    && password.isNotBlank() && password == confirmPassword
+                    && passwordValidator(password)) {
                     auth.createUserWithEmailAndPassword(email.trim(), password.trim())
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                successMessage = "Registration successful!"
-                                errorMessage = null
-                                //TODO: Navigate to Login screen
+                                onSignUpSuccess()
 
                             } else {
                                 errorMessage = task.exception?.message
@@ -96,7 +129,11 @@ fun RegistrationScreen() {
                     successMessage = null
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFFFD700),
+                contentColor = Color.Black
+            ),
         ) {
             Text("Register")
         }
@@ -112,6 +149,16 @@ fun RegistrationScreen() {
         }
     }
 }
+private fun passwordValidator(password: String): Boolean {
+    return (password.length >= 8) &&
+            (password.contains(Regex("[0-9]"))) &&
+            (password.contains(Regex("[A-Z]"))) &&
+            (password.contains(Regex("[!@#\$%^&*(),.?\":{}|<>]")))
+
+}
+private fun emailValidator(email: String): Boolean {
+    return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+}
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Preview(showBackground = true)
@@ -119,7 +166,9 @@ fun RegistrationScreen() {
 fun RegistrationScreenPreview() {
     VaccineTrackerTheme {
         Scaffold { innerPadding ->
-            RegistrationScreen()
+            RegistrationScreen(
+                onSignUpSuccess = {}
+            )
         }
     }
 }
