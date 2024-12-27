@@ -172,3 +172,4 @@ fun RegistrationScreenPreview() {
         }
     }
 }
+//TODO: Name, surname, DOB

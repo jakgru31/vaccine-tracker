@@ -184,3 +184,5 @@ fun LogInScreenPreview() {
         }
     }
 }
+
+//TODO: Add a forgot password button
