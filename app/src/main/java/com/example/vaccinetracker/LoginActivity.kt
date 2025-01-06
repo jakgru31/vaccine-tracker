@@ -47,8 +47,9 @@ class LoginActivity: ComponentActivity() {
                         startActivity(intent)
                     },
                     onSignInSuccess = {
-                        val intent = Intent(this, MainActivity::class.java)
+                        val intent = Intent(this, AccountActivity::class.java)
                         startActivity(intent)
+
                     }
                 )
             }
@@ -68,34 +69,22 @@ fun LogInScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var logInStatus by remember { mutableStateOf("") }  // Variable for displaying status message
+    var successMessage by remember { mutableStateOf<String?>(null) }
+    var logInStatus by remember { mutableStateOf("") }
 
-    Column (
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-             Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-             ) {
-                Text(
-                    text = "Welcome to Vaccine Tracker",
-                    fontSize = MaterialTheme.typography.headlineSmall.fontSize,
-                    fontStyle = MaterialTheme.typography.headlineSmall.fontStyle,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(12.dp)
-                )
-            }
-        }
-
+        Text(
+            text = "Welcome to Vaccine Tracker",
+            fontSize = MaterialTheme.typography.headlineSmall.fontSize,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(12.dp)
+        )
 
         TextField(
             value = email,
@@ -121,11 +110,10 @@ fun LogInScreen(
                     FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                // On successful sign in, set the login status
                                 logInStatus = "Hello there"
-                                onSignInSuccess()  // You can trigger additional actions here
+                                onSignInSuccess()
                             } else {
-                                errorMessage = task.exception!!.message.toString()
+                                errorMessage = task.exception?.message
                             }
                         }
                 } else {
@@ -135,7 +123,6 @@ fun LogInScreen(
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFFFD700),
                 contentColor = Color.Black
-
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -148,21 +135,50 @@ fun LogInScreen(
             colors = ButtonDefaults.outlinedButtonColors(
                 contentColor = Color(0xFFE0B400)
             )
-
         ) {
             Text("Sign Up")
         }
 
-        errorMessage?.let {
-            Spacer(modifier = Modifier.padding(8.dp))
-            Text(text = it)
+        Spacer(modifier = Modifier.padding(8.dp))
+
+        Button(
+            onClick = {
+                if (email.isNotBlank()) {
+                    FirebaseAuth.getInstance().sendPasswordResetEmail(email)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                successMessage = "Password reset email sent to $email"
+                            } else {
+                                errorMessage = task.exception?.message
+                            }
+                        }
+                } else {
+                    errorMessage = "Please enter your email address to reset your password"
+                }
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF007BFF),
+                contentColor = Color.White
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Forgot Password")
         }
 
-        // Display the login status (Hello there) in a TextField (only while WIP)
+        errorMessage?.let {
+            Spacer(modifier = Modifier.padding(8.dp))
+            Text(text = it, color = Color.Red)
+        }
+
+        successMessage?.let {
+            Spacer(modifier = Modifier.padding(8.dp))
+            Text(text = it, color = Color.Green)
+        }
+
         Text(
             text = logInStatus,
             modifier = Modifier.fillMaxWidth(),
-            color = Color(0xFFFF0000)
+            color = Color(0xFF0073CE)
         )
     }
 }
