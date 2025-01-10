@@ -1,10 +1,9 @@
 package com.example.vaccinetracker
 
-import androidx.compose.material.icons.Icons
 //import androidx.compose.material.icons.Default.Description
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
-import android.os.Bundle
+
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +32,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import VaccinationHistory
+import Vaccine
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.os.Bundle
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.MultiFormatWriter
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -62,7 +83,7 @@ fun MainScreen() {
     val navController = rememberNavController()
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(text = "Vaccine Tracker") })
+            TopAppBar(title = { Text(text = "Vaccine Tracker (Version 0.1)") })
         },
         bottomBar = {
             BottomNavigationBar(navController = navController)
@@ -163,7 +184,7 @@ fun HomeScreen() {
 }
 
 @Composable
-fun VaccinesScreen() {
+fun VaccinesScreen() {  
     val vaccinationHistory = remember { mutableStateListOf<VaccinationHistory>() }
 
     LaunchedEffect(Unit) {

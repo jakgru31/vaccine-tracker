@@ -224,7 +224,8 @@ fun RegistrationScreen(
                                     name = name,
                                     surname = surname,
                                     gender = selectedGender,
-                                    dateOfBirth = dob
+                                    dateOfBirth = dob,
+                                    certificates = mutableListOf()
                                 )
                                 db.collection("users")
                                     .document(user.id).set(user)
