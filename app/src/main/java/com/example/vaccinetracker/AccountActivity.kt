@@ -28,6 +28,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -40,6 +42,8 @@ import androidx.navigation.compose.rememberNavController
 //import androidx.test.espresso.base.Default
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import fetchUserData
 
 class AccountActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -133,6 +137,18 @@ sealed class BottomNavItem(val route: String, val title: String) {
 @Composable
 fun HomeScreen() {
     val user = FirebaseAuth.getInstance().currentUser
+    var userData by remember { mutableStateOf<User?>(null) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(user?.uid) {
+        user?.uid.let{ userId ->
+            if (userId != null) {
+                userData = fetchUserData(userId)
+            }
+        }
+    }
+
 
     Column(
         modifier = Modifier
@@ -145,9 +161,13 @@ fun HomeScreen() {
         Spacer(modifier = Modifier.padding(16.dp))
 
         user?.let {
-            Text(text = "Welcome, ${it.email}")
-            Spacer(modifier = Modifier.padding(8.dp))
-            Text(text = "Vaccination Status: Verified") // Placeholder text
+            if (userData != null) {
+                Text(text = "Welcome, ${userData?.name ?: it.email}")  // Display name if available, else email
+                Spacer(modifier = Modifier.padding(8.dp))
+                Text(text = "Vaccination Status: Verified") // Placeholder text
+            } else {
+                Text(text = "Loading user data...")
+            }
         } ?: Text(text = "No user details available.")
     }
 }
