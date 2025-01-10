@@ -21,8 +21,15 @@ import kotlinx.coroutines.withContext
 suspend fun fetchUserData(userId: String): User? {
     val db = FirebaseFirestore.getInstance()
     return try {
+        println("Attempting to fetch user data")
         val document = db.collection("users").document(userId).get().await()
-        document.toObject(User::class.java)
+        if (!document.exists()) {
+            println("Document not found")
+            return null
+        }
+        document.toObject(User::class.java)?.also {
+            println("User data fetched successfully")
+        }
     } catch (e: Exception) {
         println("Error fetching user data: $e")
         null
