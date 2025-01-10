@@ -18,6 +18,17 @@ import kotlinx.coroutines.withContext
     }
 }*/
 
+suspend fun fetchUserData(userId: String): User? {
+    val db = FirebaseFirestore.getInstance()
+    return try {
+        val document = db.collection("users").document(userId).get().await()
+        document.toObject(User::class.java)
+    } catch (e: Exception) {
+        println("Error fetching user data: $e")
+        null
+    }
+}
+
 
 suspend fun addVaccineAppointment(appointment: VaccineAppointment) {
     val db = FirebaseFirestore.getInstance()
