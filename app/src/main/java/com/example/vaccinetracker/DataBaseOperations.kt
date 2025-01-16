@@ -37,6 +37,7 @@ suspend fun fetchUserData(userId: String): User? {
 }
 
 
+
 suspend fun addVaccineAppointment(appointment: VaccineAppointment) {
     val db = FirebaseFirestore.getInstance()
     val appointmentRef = db.collection("appointments").document(appointment.appointmentId)
@@ -94,3 +95,4 @@ suspend fun addVaccinationHistory(history: VaccinationHistory) {
         println("Error adding vaccination history: $e")
     }
 }
+

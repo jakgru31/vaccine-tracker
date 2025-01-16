@@ -40,6 +40,8 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Home
@@ -184,7 +186,7 @@ fun HomeScreen() {
 }
 
 @Composable
-fun VaccinesScreen() {  
+fun VaccinesScreen() {
     val vaccinationHistory = remember { mutableStateListOf<VaccinationHistory>() }
 
     LaunchedEffect(Unit) {
@@ -197,7 +199,7 @@ fun VaccinesScreen() {
             recommendedInterval = 21,
             commonSideEffects = listOf("Fever", "Fatigue", "Headache", "Pain at injection site")
         )
-
+        //TODO: Implement adding vaccination history from the database
         vaccinationHistory.addAll(
             listOf(
                 VaccinationHistory("1", "user123", pfizerVaccine, "Dec 16, 2020", 1),
@@ -214,14 +216,16 @@ fun VaccinesScreen() {
         Text(text = "Vaccines", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
-        vaccinationHistory.forEach { record ->
-            Text(
-                text = "${record.vaccine.name}: ${record.doseNumber.ordinalSuffix()} Dose - ${record.dateAdministered}"
-            )
+        LazyColumn {
+            items(vaccinationHistory) { record ->
+                Text(
+                    text = "${record.vaccine.name}: ${record.doseNumber.ordinalSuffix()} Dose - ${record.dateAdministered}"
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
         }
     }
 }
-
 @Composable
 fun CertificatesScreen() {
     val certificates = remember { mutableStateListOf<Certificate>() }
@@ -258,12 +262,14 @@ fun CertificatesScreen() {
         Text(text = "Certificates", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
-        certificates.forEach { certificate ->
-            Button(
-                onClick = { selectedCertificate.value = certificate },
-                modifier = Modifier.padding(vertical = 8.dp)
-            ) {
-                Text(text = "View Certificate: ${certificate.vaccineName}")
+        LazyColumn {
+            items(certificates) { certificate ->
+                Button(
+                    onClick = { selectedCertificate.value = certificate },
+                    modifier = Modifier.padding(vertical = 8.dp)
+                ) {
+                    Text(text = "View Certificate: ${certificate.vaccineName}")
+                }
             }
         }
 
@@ -275,7 +281,6 @@ fun CertificatesScreen() {
         }
     }
 }
-
 @Composable
 fun QRCodeView(qrCodeData: String) {
     val qrBitmap = remember { generateQRCodeBitmap(qrCodeData) }

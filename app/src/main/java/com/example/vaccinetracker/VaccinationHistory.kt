@@ -1,5 +1,3 @@
-
-
 import Vaccine
 
 data class VaccinationHistory(
