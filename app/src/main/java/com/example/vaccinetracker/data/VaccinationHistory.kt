@@ -1,4 +1,4 @@
-import Vaccine
+package com.example.vaccinetracker.data
 
 data class VaccinationHistory(
     val historyId: String,

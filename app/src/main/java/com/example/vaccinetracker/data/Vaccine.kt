@@ -1,3 +1,5 @@
+package com.example.vaccinetracker.data
+
 data class Vaccine(
     val vaccineId: String,
     val name: String,

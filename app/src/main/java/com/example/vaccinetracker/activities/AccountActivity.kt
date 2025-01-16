@@ -1,4 +1,4 @@
-package com.example.vaccinetracker
+package com.example.vaccinetracker.activities
 
 //import androidx.compose.material.icons.Default.Description
 import androidx.compose.material3.NavigationBarItem
@@ -11,15 +11,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.twotone.Home
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,23 +29,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import VaccinationHistory
-import Vaccine
+import com.example.vaccinetracker.data.VaccinationHistory
+import com.example.vaccinetracker.data.Vaccine
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -57,14 +49,12 @@ import androidx.navigation.compose.rememberNavController
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import com.example.vaccinetracker.data.Certificate
+import com.example.vaccinetracker.adapters.CertificateAdapter
+import com.example.vaccinetracker.data.User
+import com.example.vaccinetracker.adapters.VaccinationHistoryAdapter
 //import androidx.test.espresso.base.Default
-import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import fetchUserData
 
 // The main entry point for the app
@@ -187,7 +177,7 @@ fun HomeScreen() {
 
 @Composable
 fun VaccinesScreen() {
-    val vaccinationHistory = remember { mutableStateListOf<VaccinationHistory>() }
+    val vaccinationHistoryAdapter = remember { VaccinationHistoryAdapter() }
 
     LaunchedEffect(Unit) {
         val pfizerVaccine = Vaccine(
@@ -200,11 +190,11 @@ fun VaccinesScreen() {
             commonSideEffects = listOf("Fever", "Fatigue", "Headache", "Pain at injection site")
         )
         //TODO: Implement adding vaccination history from the database
-        vaccinationHistory.addAll(
-            listOf(
-                VaccinationHistory("1", "user123", pfizerVaccine, "Dec 16, 2020", 1),
-                VaccinationHistory("2", "user123", pfizerVaccine, "Jan 6, 2021", 2)
-            )
+        vaccinationHistoryAdapter.addVaccinationHistory(
+            VaccinationHistory("1", "user123", pfizerVaccine, "Dec 16, 2020", 1)
+        )
+        vaccinationHistoryAdapter.addVaccinationHistory(
+            VaccinationHistory("2", "user123", pfizerVaccine, "Jan 6, 2021", 2)
         )
     }
 
@@ -217,7 +207,7 @@ fun VaccinesScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         LazyColumn {
-            items(vaccinationHistory) { record ->
+            items(vaccinationHistoryAdapter.getVaccinationHistory()) { record ->
                 Text(
                     text = "${record.vaccine.name}: ${record.doseNumber.ordinalSuffix()} Dose - ${record.dateAdministered}"
                 )
@@ -226,13 +216,15 @@ fun VaccinesScreen() {
         }
     }
 }
+
+
 @Composable
 fun CertificatesScreen() {
-    val certificates = remember { mutableStateListOf<Certificate>() }
+    val certificateAdapter = remember { CertificateAdapter() }
     val selectedCertificate = remember { mutableStateOf<Certificate?>(null) }
 
     LaunchedEffect(Unit) {
-        certificates.addAll(
+        certificateAdapter.addCertificates(
             listOf(
                 Certificate(
                     certificateId = "cert1",
@@ -263,7 +255,7 @@ fun CertificatesScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         LazyColumn {
-            items(certificates) { certificate ->
+            items(certificateAdapter.getCertificates()) { certificate ->
                 Button(
                     onClick = { selectedCertificate.value = certificate },
                     modifier = Modifier.padding(vertical = 8.dp)
@@ -281,6 +273,7 @@ fun CertificatesScreen() {
         }
     }
 }
+
 @Composable
 fun QRCodeView(qrCodeData: String) {
     val qrBitmap = remember { generateQRCodeBitmap(qrCodeData) }

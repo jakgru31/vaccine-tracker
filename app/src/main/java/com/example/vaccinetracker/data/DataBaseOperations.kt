@@ -1,8 +1,8 @@
-import com.example.vaccinetracker.User
+import com.example.vaccinetracker.data.User
+import com.example.vaccinetracker.data.VaccinationHistory
+import com.example.vaccinetracker.data.VaccineAppointment
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 
 /*//suspend fun addUserToDatabase(user: User) {

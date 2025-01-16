@@ -1,3 +1,5 @@
+package com.example.vaccinetracker.data
+
 data class VaccineAppointment(
     val appointmentId: String, // Unique ID for the appointment
     val userId: String, // Reference to the user who made the appointment

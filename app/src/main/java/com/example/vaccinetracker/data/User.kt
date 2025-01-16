@@ -1,6 +1,4 @@
-package com.example.vaccinetracker
-
-import java.util.Date
+package com.example.vaccinetracker.data
 
 data class User(
     val id: String = "",  // Firebase Auth UID

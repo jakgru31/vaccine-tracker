@@ -1,4 +1,4 @@
-package com.example.vaccinetracker
+package com.example.vaccinetracker.data
 
 data class Certificate(
     val certificateId: String,

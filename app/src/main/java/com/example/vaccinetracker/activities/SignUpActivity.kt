@@ -1,4 +1,4 @@
-package com.example.vaccinetracker
+package com.example.vaccinetracker.activities
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import androidx.compose.material3.RadioButton
@@ -7,7 +7,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.*
@@ -28,7 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.wear.compose.material3.RadioButton
+import com.example.vaccinetracker.data.User
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
