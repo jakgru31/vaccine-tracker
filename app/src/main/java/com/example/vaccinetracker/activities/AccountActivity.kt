@@ -1,63 +1,39 @@
 package com.example.vaccinetracker.activities
 
-//import androidx.compose.material.icons.Default.Description
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Text
-
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import com.example.vaccinetracker.data.VaccinationHistory
-import com.example.vaccinetracker.data.Vaccine
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.vaccinetracker.adapters.CertificateAdapter
+import com.example.vaccinetracker.adapters.VaccinationHistoryAdapter
+import com.example.vaccinetracker.data.Certificate
+import com.example.vaccinetracker.data.User
+import com.example.vaccinetracker.data.VaccinationHistory
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
+import com.google.firebase.auth.FirebaseAuth
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
-import com.example.vaccinetracker.data.Certificate
-import com.example.vaccinetracker.adapters.CertificateAdapter
-import com.example.vaccinetracker.data.User
-import com.example.vaccinetracker.adapters.VaccinationHistoryAdapter
-//import androidx.test.espresso.base.Default
-import com.google.firebase.auth.FirebaseAuth
-import fetchUserData
 
-// The main entry point for the app
 class AccountActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -141,13 +117,11 @@ sealed class BottomNavItem(val route: String, val title: String) {
 fun HomeScreen() {
     val user = FirebaseAuth.getInstance().currentUser
     var userData by remember { mutableStateOf<User?>(null) }
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(user?.uid) {
-        user?.uid.let{ userId ->
-            if (userId != null) {
-                userData = fetchUserData(userId)
+        user?.uid?.let { userId ->
+            User.fetchUserData(userId) { fetchedUser ->
+                userData = fetchedUser
             }
         }
     }
@@ -165,9 +139,9 @@ fun HomeScreen() {
 
         user?.let {
             if (userData != null) {
-                Text(text = "Welcome, ${userData?.name ?: it.email}")  // Display name if available, else email
+                Text(text = "Welcome, ${userData?.name ?: it.email}")
                 Spacer(modifier = Modifier.padding(8.dp))
-                Text(text = "Vaccination Status: Verified") // Placeholder text
+                Text(text = "Vaccination Status: Verified")
             } else {
                 Text(text = "Loading user data...")
             }
@@ -177,40 +151,47 @@ fun HomeScreen() {
 
 @Composable
 fun VaccinesScreen() {
+    // Create an instance of the adapter for fetching vaccination history
     val vaccinationHistoryAdapter = remember { VaccinationHistoryAdapter() }
 
-    LaunchedEffect(Unit) {
-        val pfizerVaccine = Vaccine(
-            vaccineId = "vaccine123",
-            name = "Pfizer-BioNTech Covid-19 Vaccine",
-            manufacturer = "Pfizer, Inc.",
-            type = "mRNA",
-            dosesRequired = 2,
-            recommendedInterval = 21,
-            commonSideEffects = listOf("Fever", "Fatigue", "Headache", "Pain at injection site")
-        )
-        //TODO: Implement adding vaccination history from the database
-        vaccinationHistoryAdapter.addVaccinationHistory(
-            VaccinationHistory("1", "user123", pfizerVaccine, "Dec 16, 2020", 1)
-        )
-        vaccinationHistoryAdapter.addVaccinationHistory(
-            VaccinationHistory("2", "user123", pfizerVaccine, "Jan 6, 2021", 2)
-        )
+    // Mutable state list to store vaccination history and observe changes
+    val vaccinationHistory = remember { mutableStateListOf<VaccinationHistory>() }
+
+    // Get the current user's ID from Firebase Authentication
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+    // Fetch vaccination history when the user ID becomes available
+    LaunchedEffect(userId) {
+        userId?.let {
+            // Call adapter's function to fetch vaccination history
+            vaccinationHistoryAdapter.fetchVaccinationHistoryFromFirebase(it) { fetchedHistory ->
+                vaccinationHistory.clear() // Clear any existing records
+                vaccinationHistory.addAll(fetchedHistory) // Add fetched records to the list
+            }
+        }
     }
 
+    // Render the UI elements for displaying vaccination history
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+            .fillMaxSize() // Fill the available screen space
+            .padding(16.dp) // Add padding around the column
     ) {
+        // Display the title of the screen
         Text(text = "Vaccines", style = MaterialTheme.typography.headlineMedium)
+
+        // Add vertical spacing below the title
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Display a scrollable list of vaccination history
         LazyColumn {
-            items(vaccinationHistoryAdapter.getVaccinationHistory()) { record ->
+            // Iterate through the vaccination history list and display each record
+            items(vaccinationHistory) { record ->
+                // Display details of each vaccine record
                 Text(
                     text = "${record.vaccine.name}: ${record.doseNumber.ordinalSuffix()} Dose - ${record.dateAdministered}"
                 )
+                // Add spacing between records
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
@@ -220,72 +201,64 @@ fun VaccinesScreen() {
 
 @Composable
 fun CertificatesScreen() {
+    // Create an instance of the adapter for fetching certificates from Firebase
     val certificateAdapter = remember { CertificateAdapter() }
-    val selectedCertificate = remember { mutableStateOf<Certificate?>(null) }
 
+    // Mutable state list to hold certificates and observe changes for recomposition
+    val certificates = remember { mutableStateListOf<Certificate>() }
+
+    // Fetch certificates from Firebase when this composable is first launched
     LaunchedEffect(Unit) {
-        certificateAdapter.addCertificates(
-            listOf(
-                Certificate(
-                    certificateId = "cert1",
-                    userId = "user123",
-                    vaccineName = "Pfizer-BioNTech Covid-19 Vaccine",
-                    dateAdministered = "Jan 6, 2021",
-                    doseNumber = 2,
-                    qrCodeData = "https://example.com/certificate/cert1"
-                ),
-                Certificate(
-                    certificateId = "cert2",
-                    userId = "user123",
-                    vaccineName = "Influenza Vaccine",
-                    dateAdministered = "Nov 4, 2019",
-                    doseNumber = 1,
-                    qrCodeData = "https://example.com/certificate/cert2"
-                )
-            )
-        )
+        // Call adapter's function to fetch certificates from Firebase
+        certificateAdapter.fetchCertificatesFromFirebase { fetchedCertificates ->
+            certificates.clear() // Clear any existing certificates
+            certificates.addAll(fetchedCertificates) // Add fetched certificates to the list
+        }
     }
 
+    // Render the UI elements for displaying certificates
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+            .fillMaxSize() // Fill the available screen space
+            .padding(16.dp) // Add padding around the column
     ) {
+        // Display the title of the screen
         Text(text = "Certificates", style = MaterialTheme.typography.headlineMedium)
+
+        // Add vertical spacing below the title
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Display a scrollable list of certificates
         LazyColumn {
-            items(certificateAdapter.getCertificates()) { certificate ->
+            // Iterate through the certificates list and display each certificate
+            items(certificates) { certificate ->
+                // Button to represent each certificate
                 Button(
-                    onClick = { selectedCertificate.value = certificate },
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    onClick = { /* Handle certificate selection */ }, // Action when clicked
+                    modifier = Modifier.padding(vertical = 8.dp) // Add vertical padding around the button
                 ) {
+                    // Display the vaccine name on the button
                     Text(text = "View Certificate: ${certificate.vaccineName}")
                 }
             }
         }
-
-        selectedCertificate.value?.let { certificate ->
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "QR Code for: ${certificate.vaccineName}")
-            Spacer(modifier = Modifier.height(8.dp))
-            QRCodeView(qrCodeData = certificate.qrCodeData)
-        }
     }
 }
+
+
 
 @Composable
 fun QRCodeView(qrCodeData: String) {
     val qrBitmap = remember { generateQRCodeBitmap(qrCodeData) }
     qrBitmap?.let {
         Box(
-            modifier = Modifier.fillMaxWidth(), // Makes Box take full width for proper alignment
-            contentAlignment = Alignment.Center // Centers content inside the Box
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
             Image(
                 bitmap = it.asImageBitmap(),
                 contentDescription = "QR Code",
-                modifier = Modifier.size(200.dp) // Set size of the QR code
+                modifier = Modifier.size(200.dp)
             )
         }
     }
