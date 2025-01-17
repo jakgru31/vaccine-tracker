@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -28,6 +27,7 @@ import com.example.vaccinetracker.adapters.CertificateAdapter
 import com.example.vaccinetracker.adapters.VaccinationHistoryAdapter
 import com.example.vaccinetracker.data.Certificate
 import com.example.vaccinetracker.data.User
+import com.example.vaccinetracker.data.UserRepository
 import com.example.vaccinetracker.data.VaccinationHistory
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.auth.FirebaseAuth
@@ -115,137 +115,133 @@ sealed class BottomNavItem(val route: String, val title: String) {
 
 @Composable
 fun HomeScreen() {
-    val user = FirebaseAuth.getInstance().currentUser
+    val userRepository = remember { UserRepository() }
+    val currentUser = FirebaseAuth.getInstance().currentUser
     var userData by remember { mutableStateOf<User?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(user?.uid) {
-        user?.uid?.let { userId ->
-            User.fetchUserData(userId) { fetchedUser ->
-                userData = fetchedUser
+    LaunchedEffect(currentUser?.uid) {
+        currentUser?.uid?.let { userId ->
+            isLoading = true
+            errorMessage = null
+            userRepository.fetchUserData(userId) { fetchedUser ->
+                if (fetchedUser != null) {
+                    userData = fetchedUser
+                } else {
+                    errorMessage = "Failed to fetch user data."
+                }
+                isLoading = false
             }
+        } ?: run {
+            errorMessage = "No user logged in."
+            isLoading = false
         }
     }
-
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
     ) {
         Text(text = "Home", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.padding(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        user?.let {
-            if (userData != null) {
-                Text(text = "Welcome, ${userData?.name ?: it.email}")
-                Spacer(modifier = Modifier.padding(8.dp))
-                Text(text = "Vaccination Status: Verified")
-            } else {
-                Text(text = "Loading user data...")
+        when {
+            isLoading -> Text(text = "Loading...")
+            errorMessage != null -> Text(text = errorMessage ?: "An unknown error occurred.")
+            userData != null -> {
+                print(userData?.id)
+                Text(text = "Welcome, ${userData?.name ?: "User"}")
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = "Email: ${userData?.email ?: "Not available"}")
+                Text(text = "Surname: ${userData?.surname ?: "Not available"}")
+                Text(text = "Gender: ${userData?.gender ?: "Not available"}")
+                Text(text = "Date of Birth: ${userData?.dateOfBirth ?: "Not available"}")
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = "Certificates:")
+                if (userData?.certificates.isNullOrEmpty()) {
+                    Text(text = "No certificates available.")
+                } else {
+                    userData?.certificates?.forEach { certificate ->
+                        Text(text = "- ${certificate.vaccineName}")
+                    }
+                }
             }
-        } ?: Text(text = "No user details available.")
+            else -> Text(text = "No data available.")
+        }
     }
 }
 
 @Composable
 fun VaccinesScreen() {
-    // Create an instance of the adapter for fetching vaccination history
     val vaccinationHistoryAdapter = remember { VaccinationHistoryAdapter() }
-
-    // Mutable state list to store vaccination history and observe changes
     val vaccinationHistory = remember { mutableStateListOf<VaccinationHistory>() }
-
-    // Get the current user's ID from Firebase Authentication
     val userId = FirebaseAuth.getInstance().currentUser?.uid
 
-    // Fetch vaccination history when the user ID becomes available
     LaunchedEffect(userId) {
         userId?.let {
-            // Call adapter's function to fetch vaccination history
             vaccinationHistoryAdapter.fetchVaccinationHistoryFromFirebase(it) { fetchedHistory ->
-                vaccinationHistory.clear() // Clear any existing records
-                vaccinationHistory.addAll(fetchedHistory) // Add fetched records to the list
+                vaccinationHistory.clear()
+                vaccinationHistory.addAll(fetchedHistory)
             }
         }
     }
 
-    // Render the UI elements for displaying vaccination history
     Column(
         modifier = Modifier
-            .fillMaxSize() // Fill the available screen space
-            .padding(16.dp) // Add padding around the column
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
-        // Display the title of the screen
         Text(text = "Vaccines", style = MaterialTheme.typography.headlineMedium)
-
-        // Add vertical spacing below the title
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Display a scrollable list of vaccination history
         LazyColumn {
-            // Iterate through the vaccination history list and display each record
             items(vaccinationHistory) { record ->
-                // Display details of each vaccine record
                 Text(
                     text = "${record.vaccine.name}: ${record.doseNumber.ordinalSuffix()} Dose - ${record.dateAdministered}"
                 )
-                // Add spacing between records
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
 }
 
-
 @Composable
 fun CertificatesScreen() {
-    // Create an instance of the adapter for fetching certificates from Firebase
     val certificateAdapter = remember { CertificateAdapter() }
-
-    // Mutable state list to hold certificates and observe changes for recomposition
     val certificates = remember { mutableStateListOf<Certificate>() }
 
-    // Fetch certificates from Firebase when this composable is first launched
     LaunchedEffect(Unit) {
-        // Call adapter's function to fetch certificates from Firebase
         certificateAdapter.fetchCertificatesFromFirebase { fetchedCertificates ->
-            certificates.clear() // Clear any existing certificates
-            certificates.addAll(fetchedCertificates) // Add fetched certificates to the list
+            certificates.clear()
+            certificates.addAll(fetchedCertificates)
         }
     }
 
-    // Render the UI elements for displaying certificates
     Column(
         modifier = Modifier
-            .fillMaxSize() // Fill the available screen space
-            .padding(16.dp) // Add padding around the column
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
-        // Display the title of the screen
         Text(text = "Certificates", style = MaterialTheme.typography.headlineMedium)
-
-        // Add vertical spacing below the title
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Display a scrollable list of certificates
         LazyColumn {
-            // Iterate through the certificates list and display each certificate
             items(certificates) { certificate ->
-                // Button to represent each certificate
                 Button(
-                    onClick = { /* Handle certificate selection */ }, // Action when clicked
-                    modifier = Modifier.padding(vertical = 8.dp) // Add vertical padding around the button
+                    onClick = { /* Handle certificate selection */ },
+                    modifier = Modifier.padding(vertical = 8.dp)
                 ) {
-                    // Display the vaccine name on the button
                     Text(text = "View Certificate: ${certificate.vaccineName}")
                 }
             }
         }
     }
 }
-
-
 
 @Composable
 fun QRCodeView(qrCodeData: String) {
