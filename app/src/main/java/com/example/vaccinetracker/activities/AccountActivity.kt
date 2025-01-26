@@ -163,11 +163,11 @@ fun HomeScreen() {
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(text = "Certificates:")
-                if (userData?.certificates.isNullOrEmpty()) {
+                if (userData?.vaccinationHistories.isNullOrEmpty()) {
                     Text(text = "No certificates available.")
                 } else {
-                    userData?.certificates?.forEach { certificate ->
-                        Text(text = "- ${certificate.vaccineName}")
+                    userData?.vaccinationHistories?.forEach { certificate ->
+                        Text(text = "- ${certificate.vaccineUid}")
                     }
                 }
             }
@@ -202,7 +202,7 @@ fun VaccinesScreen() {
         LazyColumn {
             items(vaccinationHistory) { record ->
                 Text(
-                    text = "${record.vaccine.name}: ${record.doseNumber.ordinalSuffix()} Dose - ${record.dateAdministered}"
+                    text = "${record.vaccineUid}: ${record.doseNumber.ordinalSuffix()} Dose - ${record.dateAdministered}"
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }

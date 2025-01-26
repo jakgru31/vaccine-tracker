@@ -1,10 +1,12 @@
 package com.example.vaccinetracker.activities
+import addNewUserToDatabase
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import androidx.compose.material3.RadioButton
 import android.content.Intent
 import android.content.res.Resources
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -31,8 +33,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.vaccinetracker.data.User
+import com.example.vaccinetracker.data.Vaccine
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -60,7 +68,6 @@ fun RegistrationScreen(
 ) {
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
-    val db = FirebaseFirestore.getInstance()
 
     var name by remember { mutableStateOf("") }
     var surname by remember { mutableStateOf("") }
@@ -78,40 +85,66 @@ fun RegistrationScreen(
     val month = calendar.get(Calendar.MONTH)
     val day = calendar.get(Calendar.DAY_OF_MONTH)
 
-    fun registerUser() {
+     fun registerUser() {
         if (email.isBlank() || password != confirmPassword || name.isBlank() || dob.isBlank() || selectedGender.isBlank()) {
             errorMessage = "Please fill out all fields correctly."
             return
         }
 
-        auth.createUserWithEmailAndPassword(email.trim(), password.trim())
+        // Add validation
+        if (!emailValidator(email)) {
+            errorMessage = "Invalid email format."
+            return
+        }
+        if (!passwordValidator(password)) {
+            errorMessage = "Invalid password format. Password must have at least 8 characters, a mix of upper and lowercase, a number and a special character."
+            return
+        }
+        // Add validation check
+        if (!dobValidator(dob)) {
+            errorMessage = "Invalid date of birth."
+            return
+        }
+
+
+         val newUser = User(
+             id = "",
+             email = email.trim(),
+             password = password.trim(),
+             name = name,
+             surname = surname,
+             gender = selectedGender,
+             dateOfBirth = dob,
+             vaccinationHistories = mutableListOf()
+         )
+
+         CoroutineScope(Dispatchers.IO).launch {
+             val registrationSuccessful = addNewUserToDatabase(newUser) // Use the return value!
+             withContext(Dispatchers.Main) {
+                 if (registrationSuccessful) {
+                     successMessage = "Registration successful!"
+                     onSignUpSuccess() // Only navigate on success
+                 }
+             }
+         }
+
+
+
+
+/*auth.createUserWithEmailAndPassword(email.trim(), password.trim())
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    val userId = auth.currentUser?.uid ?: return@addOnCompleteListener
-                    val user = User(
-                        id = userId,
-                        name = name,
-                        surname = surname,
-                        email = email,
-                        dateOfBirth = dob,
-                        gender = selectedGender,
-                        certificates = mutableListOf()
-                    )
-
-                    db.collection("users").document(userId).set(user)
-                        .addOnSuccessListener {
-                            successMessage = "User registered successfully"
-                            onSignUpSuccess()
-                        }
-                        .addOnFailureListener {
-                            errorMessage = "Failed to save user data: ${it.message}"
-                        }
+                    val newUser = User("", email, password, name, surname, selectedGender,dob, mutableListOf())
+                    addNewUserToDatabase(newUser)
+                    successMessage = "Registration successful!"
+                    onSignUpSuccess()
                 } else {
                     errorMessage = task.exception?.message ?: "Registration failed."
                 }
-            }
+            }.addOnFailureListener { exception ->
+                errorMessage = "Error registering user: ${exception.message}"
+            }*/
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -294,4 +327,9 @@ fun RegistrationScreenPreview() {
             )
         }
     }
+}
+
+suspend fun doS()
+{
+
 }

@@ -1,24 +1,114 @@
 import com.example.vaccinetracker.data.User
 import com.example.vaccinetracker.data.VaccinationHistory
 import com.example.vaccinetracker.data.VaccineAppointment
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
 
-/*//suspend fun addUserToDatabase(user: User) {
+// ...
+
+suspend fun addNewUserToDatabase(user: User): Boolean { // Return success/failure
     val db = FirebaseFirestore.getInstance()
-    val userRef = db.collection("users").document(user.id)
+    val auth = FirebaseAuth.getInstance()
 
     try {
-        // Use 'await()' to wait for the result of the operation
-        userRef.set(user).await()
-        println("User added successfully")
-    } catch (e: Exception) {
-        println("Error adding user: $e")
-    }
-}*/
+        val userCredential = auth.createUserWithEmailAndPassword(user.email, user.password).await()
+        val firebaseUser: FirebaseUser = userCredential.user!!
+        val uid = firebaseUser.uid
 
-suspend fun fetchUserData(userId: String): User? {
+        user.id = uid
+        db.collection("users").document(uid).set(user).await()
+
+        println("User added successfully")
+        return true // Success
+
+    } catch (e: Exception) {
+        val errorMessage = when (e) {
+            is com.google.firebase.firestore.FirebaseFirestoreException -> {
+                when (e.code) {
+                    com.google.firebase.firestore.FirebaseFirestoreException.Code.FAILED_PRECONDITION -> "Document already exists."
+                    com.google.firebase.firestore.FirebaseFirestoreException.Code.ALREADY_EXISTS -> "User with this email already exists." // More specific
+                    else -> "Firestore error: ${e.message}"
+                }
+            }
+            is FirebaseAuthException -> { // Handle FirebaseAuth exceptions
+                when (e.errorCode) {
+                    "ERROR_INVALID_EMAIL" -> "Invalid email format."
+                    "ERROR_WEAK_PASSWORD" -> "Password too weak."
+                    "ERROR_EMAIL_ALREADY_IN_USE" -> "Email already in use."
+                    else -> "Authentication error: ${e.message}"
+                }
+            }
+
+            else -> "Error adding user: ${e.message}"
+
+        }
+        println("Error adding user: $errorMessage")
+        return false // Failure
+    }
+}
+
+suspend fun userMakesVaccination(userId: String, vaccineId: String)
+{
+
+}
+
+
+suspend fun updateUserData(userUid: String, )
+{
+    val db = FirebaseFirestore.getInstance()
+    val auth = FirebaseAuth.getInstance()
+
+}
+
+
+/*
+suspend fun addVaccinationRecord(
+    userUid: String,
+    vaccineUid: String,
+    dateAdministered: String,
+    doseNumber: Int
+): Result<Unit> {
+    val db = FirebaseFirestore.getInstance()
+    return try {
+        val newVaccinationHistory = VaccinationHistory(vaccinationHistoryUid = "", userUid = userUid, vaccineUid = vaccineUid, dateAdministered = dateAdministered, doseNumber = doseNumber)
+
+
+        val userDocRef = db.collection("users").document(userUid)
+
+        val userSnapshot = userDocRef.get().await()
+
+        if (userSnapshot.exists()) {
+            val user = userSnapshot.toObject(User::class.java) ?: return Result.failure(Exception("Error retrieving User object"))
+
+
+            // Crucial:  Update the existing list, rather than just adding.
+            val updatedVaccinationHistories = user.vaccinationHistories + newVaccinationHistory
+
+            val updatedUserData = mapOf("vaccinationHistories" to updatedVaccinationHistories)
+            val updateResult = userDocRef.set(updatedUserData, SetOptions.merge()).await() // Using set
+
+
+            if (updateResult.isSuccessful) {
+                return Result.success(Unit)
+            } else {
+                return Result.failure(Exception("Error updating vaccinationHistory"))
+            }
+        } else {
+            return Result.failure(Exception("User document not found for $userUid"))
+        }
+
+    } catch (e: Exception) {
+        return Result.failure(e)
+    }
+}
+*/
+
+/*suspend fun fetchUserData(userId: String): User? {
     val db = FirebaseFirestore.getInstance()
     return try {
         println("Attempting to fetch user data")
@@ -34,7 +124,7 @@ suspend fun fetchUserData(userId: String): User? {
         println("Error fetching user data: $e")
         null
     }
-}
+}*/
 
 
 
@@ -84,7 +174,7 @@ suspend fun updateAppointmentStatus(appointmentId: String, status: String) {
     }
 }
 
-suspend fun addVaccinationHistory(history: VaccinationHistory) {
+/*suspend fun addVaccinationHistory(history: VaccinationHistory) {
     val db = FirebaseFirestore.getInstance()
     val historyRef = db.collection("vaccinationHistory").document(history.historyId)
 
@@ -94,5 +184,5 @@ suspend fun addVaccinationHistory(history: VaccinationHistory) {
     } catch (e: Exception) {
         println("Error adding vaccination history: $e")
     }
-}
+}*/
 
