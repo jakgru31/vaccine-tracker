@@ -28,11 +28,16 @@ import com.example.vaccinetracker.adapters.VaccinationHistoryAdapter
 import com.example.vaccinetracker.data.Certificate
 import com.example.vaccinetracker.data.User
 import com.example.vaccinetracker.data.UserRepository
-import com.example.vaccinetracker.data.VaccinationHistory
+import com.example.vaccinetracker.data.VaccinationRecord
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import userMakesVaccination
+
+//import userMakesVaccination
 
 class AccountActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,9 +68,13 @@ fun MainScreen() {
 
 @Composable
 fun NavigationHost(navController: NavHostController, modifier: Modifier) {
+    val coroutineScope = rememberCoroutineScope()
     NavHost(navController = navController, startDestination = "home", modifier = modifier) {
         composable("home") { HomeScreen() }
-        composable("vaccines") { VaccinesScreen() }
+        composable("vaccines") { VaccinesScreen(coroutineScope = coroutineScope,
+            vaccineUid = "Pfizer",  // Example values – provide these from your parent composable
+            dateAdministered = "2024-07-26",
+            doseNumber = 1) }
         composable("certificates") { CertificatesScreen() }
     }
 }
@@ -163,11 +172,11 @@ fun HomeScreen() {
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(text = "Certificates:")
-                if (userData?.vaccinationHistories.isNullOrEmpty()) {
+                if (userData?.vaccinationRecords.isNullOrEmpty()) {
                     Text(text = "No certificates available.")
                 } else {
-                    userData?.vaccinationHistories?.forEach { certificate ->
-                        Text(text = "- ${certificate.vaccineUid}")
+                    userData?.vaccinationRecords?.forEach { certificate ->
+                        Text(text = "- ${certificate}")
                     }
                 }
             }
@@ -177,40 +186,55 @@ fun HomeScreen() {
 }
 
 @Composable
-fun VaccinesScreen() {
-    val vaccinationHistoryAdapter = remember { VaccinationHistoryAdapter() }
-    val vaccinationHistory = remember { mutableStateListOf<VaccinationHistory>() }
+fun VaccinesScreen(
+    coroutineScope: CoroutineScope, // Add CoroutineScope
+    vaccineUid: String, // Add vaccineUid, dateAdministered, and doseNumber as parameters
+    dateAdministered: String,
+    doseNumber: Int
+) {
     val userId = FirebaseAuth.getInstance().currentUser?.uid
-
-    LaunchedEffect(userId) {
-        userId?.let {
-            vaccinationHistoryAdapter.fetchVaccinationHistoryFromFirebase(it) { fetchedHistory ->
-                vaccinationHistory.clear()
-                vaccinationHistory.addAll(fetchedHistory)
-            }
-        }
-    }
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Vaccines", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        LazyColumn {
-            items(vaccinationHistory) { record ->
-                Text(
-                    text = "${record.vaccineUid}: ${record.doseNumber.ordinalSuffix()} Dose - ${record.dateAdministered}"
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = {
+            userId?.let {
+                coroutineScope.launch {
+                    val success = userMakesVaccination(it, vaccineUid, dateAdministered, doseNumber)
+                    if (!success) {
+                        println("false")
+                    } else {
+                        // Handle success, e.g., show a success message, navigate to another screen
+                        println("Success")
+                    }
+                }
             }
+
+        }) {
+            Text("Make Vaccine")
+        }
+
+        // Error Dialog
+        if (showErrorDialog) {
+            AlertDialog(
+                onDismissRequest = { showErrorDialog = false },
+                title = { Text("Error") },
+                text = { Text(errorMessage) },
+                confirmButton = {
+                    Button(onClick = { showErrorDialog = false }) {
+                        Text("OK")
+                    }
+                }
+            )
         }
     }
-}
-
-@Composable
+}@Composable
 fun CertificatesScreen() {
     val certificateAdapter = remember { CertificateAdapter() }
     val certificates = remember { mutableStateListOf<Certificate>() }

@@ -1,42 +1,42 @@
 package com.example.vaccinetracker.adapters
 
 import androidx.compose.runtime.mutableStateListOf
-import com.example.vaccinetracker.data.VaccinationHistory
+import com.example.vaccinetracker.data.VaccinationRecord
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.google.firebase.firestore.FirebaseFirestore
 
 class VaccinationHistoryAdapter {
-    private val vaccinationHistory: SnapshotStateList<VaccinationHistory> = mutableStateListOf()
+    private val vaccinationHistory: SnapshotStateList<VaccinationRecord> = mutableStateListOf()
 
-    fun addVaccinationHistory(history: VaccinationHistory) {
-        vaccinationHistory.add(history)
+    fun addVaccinationRecord(record: VaccinationRecord) {
+        vaccinationHistory.add(record)
     }
 
-    fun addVaccinationHistory(histories: List<VaccinationHistory>) {
+    fun addVaccinationRecord(histories: List<VaccinationRecord>) {
         vaccinationHistory.addAll(histories)
     }
 
-    fun getVaccinationHistory(): List<VaccinationHistory> {
+    fun getVaccinationRecord(): List<VaccinationRecord> {
         return vaccinationHistory
     }
 
-    fun clearVaccinationHistory() {
+    fun clearVaccinationRecord() {
         vaccinationHistory.clear()
     }
 
-    fun fetchVaccinationHistoryFromFirebase(
+    fun fetchVaccinationRecordFromFirebase(
         userId: String,
-        callback: (List<VaccinationHistory>) -> Unit
+        callback: (List<VaccinationRecord>) -> Unit
     ) {
         val db = FirebaseFirestore.getInstance()
-        db.collection("vaccination_history")
+        db.collection("vaccination_records")
             .whereEqualTo("userId", userId)
             .get()
             .addOnSuccessListener { snapshot ->
-                val fetchedHistory = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(VaccinationHistory::class.java)
+                val fetchedRecord = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(VaccinationRecord::class.java)
                 }
-                callback(fetchedHistory)
+                callback(fetchedRecord)
             }
             .addOnFailureListener {
                 callback(emptyList())

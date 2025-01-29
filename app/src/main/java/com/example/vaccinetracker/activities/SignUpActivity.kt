@@ -115,7 +115,7 @@ fun RegistrationScreen(
              surname = surname,
              gender = selectedGender,
              dateOfBirth = dob,
-             vaccinationHistories = mutableListOf()
+             vaccinationRecords= mutableListOf()
          )
 
          CoroutineScope(Dispatchers.IO).launch {

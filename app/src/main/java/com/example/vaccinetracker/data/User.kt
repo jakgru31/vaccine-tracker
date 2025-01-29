@@ -8,6 +8,6 @@ data class User(
     val surname: String = "",
     val gender: String = "",
     val dateOfBirth: String = "",
-    val vaccinationHistories: MutableList<VaccinationHistory> = mutableListOf() // List of Histories for
+    val vaccinationRecords: MutableList<String> = mutableListOf() // List of Histories for
 // this user where one vaccinationHistory containts data about one vaccine the user made
 )

@@ -1,12 +1,17 @@
 import com.example.vaccinetracker.data.User
-import com.example.vaccinetracker.data.VaccinationHistory
+import com.example.vaccinetracker.data.VaccinationRecord
 import com.example.vaccinetracker.data.VaccineAppointment
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.util.UUID
 
 
 // ...
@@ -52,7 +57,7 @@ suspend fun addNewUserToDatabase(user: User): Boolean { // Return success/failur
     }
 }
 
-suspend fun userMakesVaccination(userId: String, vaccineId: String)
+suspend fun userMakesVaccination2(userUid: String, vaccineUid: String, dateAdministered: String, doseNumber: Int)
 {
 
 }
@@ -66,49 +71,51 @@ suspend fun updateUserData(userUid: String, )
 }
 
 
-/*
-suspend fun addVaccinationRecord(
-    userUid: String,
-    vaccineUid: String,
-    dateAdministered: String,
-    doseNumber: Int
-): Result<Unit> {
+// A vaccination Record is created and stored as well as its id in the users vaccination records list
+suspend fun userMakesVaccination(userUid: String, vaccineUid: String, dateAdministered: String, doseNumber: Int): Boolean {
     val db = FirebaseFirestore.getInstance()
-    return try {
-        val newVaccinationHistory = VaccinationHistory(vaccinationHistoryUid = "", userUid = userUid, vaccineUid = vaccineUid, dateAdministered = dateAdministered, doseNumber = doseNumber)
 
+    println("userUid: $userUid, vaccineUid: $vaccineUid, dateAdministered: $dateAdministered, doseNumber: $doseNumber")
+    return withContext(Dispatchers.IO) {
+        try {
+            // Generate a new UID for the vaccination record
+            val vaccinationRecordUid = UUID.randomUUID().toString()
+            val newVaccinationRecord = VaccinationRecord(
+                vaccinationRecordUid, userUid, vaccineUid, dateAdministered, doseNumber
+            )
 
-        val userDocRef = db.collection("users").document(userUid)
+            val userDocRef = db.collection("users").document(userUid)
+            val vaccinationRecordRef = db.collection("vaccination_records").document(vaccinationRecordUid)
 
-        val userSnapshot = userDocRef.get().await()
+            db.runTransaction { transaction ->
+                val userSnapshot = transaction.get(userDocRef)
 
-        if (userSnapshot.exists()) {
-            val user = userSnapshot.toObject(User::class.java) ?: return Result.failure(Exception("Error retrieving User object"))
+                if (!userSnapshot.exists()) {
+                    throw FirebaseFirestoreException("User not found", FirebaseFirestoreException.Code.NOT_FOUND)
+                }
 
+                val user = userSnapshot.toObject(User::class.java)
+                    ?: throw FirebaseFirestoreException("User conversion error", FirebaseFirestoreException.Code.FAILED_PRECONDITION)
 
-            // Crucial:  Update the existing list, rather than just adding.
-            val updatedVaccinationHistories = user.vaccinationHistories + newVaccinationHistory
+                // Update user's vaccination records list (store only UID)
+                val updatedVaccinationRecords = user.vaccinationRecords.toMutableList()
+                updatedVaccinationRecords.add(vaccinationRecordUid)
 
-            val updatedUserData = mapOf("vaccinationHistories" to updatedVaccinationHistories)
-            val updateResult = userDocRef.set(updatedUserData, SetOptions.merge()).await() // Using set
+                // Save the vaccination record
+                transaction.set(vaccinationRecordRef, newVaccinationRecord)
 
+                // Update user's vaccination records list
+                transaction.update(userDocRef, "vaccinationRecords", updatedVaccinationRecords)
+            }.await()
 
-            if (updateResult.isSuccessful) {
-                return Result.success(Unit)
-            } else {
-                return Result.failure(Exception("Error updating vaccinationHistory"))
-            }
-        } else {
-            return Result.failure(Exception("User document not found for $userUid"))
+            true // Transaction was successful
+        } catch (e: Exception) {
+            println("Error adding vaccination record: ${e.message}")
+            false // Transaction failed
         }
-
-    } catch (e: Exception) {
-        return Result.failure(e)
     }
 }
-*/
-
-/*suspend fun fetchUserData(userId: String): User? {
+suspend fun fetchUserData(userId: String): User? {
     val db = FirebaseFirestore.getInstance()
     return try {
         println("Attempting to fetch user data")
@@ -124,7 +131,7 @@ suspend fun addVaccinationRecord(
         println("Error fetching user data: $e")
         null
     }
-}*/
+}
 
 
 

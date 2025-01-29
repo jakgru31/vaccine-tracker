@@ -1,7 +1,7 @@
 package com.example.vaccinetracker.data
 
-data class VaccinationHistory(
-    val vaccinationHistoryUid: String,
+data class VaccinationRecord(
+    val vaccinationRecordUid: String,
     val userUid: String,
     val vaccineUid: String,
     val dateAdministered: String,
