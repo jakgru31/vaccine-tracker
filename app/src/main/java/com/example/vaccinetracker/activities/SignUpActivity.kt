@@ -4,10 +4,7 @@ import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import androidx.compose.material3.RadioButton
 import android.content.Intent
-import android.content.res.Resources
 import android.os.Bundle
-import android.util.Log
-import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -32,14 +29,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.vaccinetracker.data.User
-import com.example.vaccinetracker.data.Vaccine
+import com.example.vaccinetracker.collections.User
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -106,7 +100,6 @@ fun RegistrationScreen(
             return
         }
 
-
          val newUser = User(
              id = "",
              email = email.trim(),
@@ -115,7 +108,8 @@ fun RegistrationScreen(
              surname = surname,
              gender = selectedGender,
              dateOfBirth = dob,
-             vaccinationRecords= mutableListOf()
+             vaccinationRecords= mutableListOf(),
+             appointments = mutableListOf()
          )
 
          CoroutineScope(Dispatchers.IO).launch {

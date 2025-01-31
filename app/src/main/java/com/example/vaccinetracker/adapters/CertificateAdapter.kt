@@ -2,7 +2,7 @@ package com.example.vaccinetracker.adapters
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.example.vaccinetracker.data.Certificate
+import com.example.vaccinetracker.collections.Certificate
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 

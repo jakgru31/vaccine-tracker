@@ -1,21 +1,17 @@
-import com.example.vaccinetracker.data.User
-import com.example.vaccinetracker.data.VaccinationRecord
-import com.example.vaccinetracker.data.VaccineAppointment
-import com.google.android.gms.tasks.Tasks
+import com.example.vaccinetracker.collections.Appointment
+import com.example.vaccinetracker.collections.User
+import com.example.vaccinetracker.collections.VaccinationRecord
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
-
-// ...
-
+//TODO Works
 suspend fun addNewUserToDatabase(user: User): Boolean { // Return success/failure
     val db = FirebaseFirestore.getInstance()
     val auth = FirebaseAuth.getInstance()
@@ -57,20 +53,7 @@ suspend fun addNewUserToDatabase(user: User): Boolean { // Return success/failur
     }
 }
 
-suspend fun userMakesVaccination2(userUid: String, vaccineUid: String, dateAdministered: String, doseNumber: Int)
-{
-
-}
-
-
-suspend fun updateUserData(userUid: String, )
-{
-    val db = FirebaseFirestore.getInstance()
-    val auth = FirebaseAuth.getInstance()
-
-}
-
-
+//TODO Works
 // A vaccination Record is created and stored as well as its id in the users vaccination records list
 suspend fun userMakesVaccination(userUid: String, vaccineUid: String, dateAdministered: String, doseNumber: Int): Boolean {
     val db = FirebaseFirestore.getInstance()
@@ -115,6 +98,26 @@ suspend fun userMakesVaccination(userUid: String, vaccineUid: String, dateAdmini
         }
     }
 }
+
+
+suspend fun userMakesAppointment(userId: String, vaccineId: String, appointmentDate: String): Boolean {
+    val db = FirebaseFirestore.getInstance()
+    val appointmentId = UUID.randomUUID().toString()
+    val appointment = Appointment(appointmentId, userId, vaccineId, appointmentDate)
+
+    return withContext(Dispatchers.IO) {
+        try {
+            db.collection("appointments").document(appointmentId).set(appointment).await()
+            println("Appointment added successfully")
+            true
+        } catch (e: Exception) {
+            println("Error processing appointment: ${e.message}")
+            false
+        }
+    }
+}
+
+
 suspend fun fetchUserData(userId: String): User? {
     val db = FirebaseFirestore.getInstance()
     return try {
@@ -135,7 +138,7 @@ suspend fun fetchUserData(userId: String): User? {
 
 
 
-suspend fun addVaccineAppointment(appointment: VaccineAppointment) {
+suspend fun addVaccineAppointment(appointment: Appointment) {
     val db = FirebaseFirestore.getInstance()
     val appointmentRef = db.collection("appointments").document(appointment.appointmentId)
 
@@ -148,9 +151,9 @@ suspend fun addVaccineAppointment(appointment: VaccineAppointment) {
 }
 
 
-suspend fun getAppointmentsForUser(userId: String): List<VaccineAppointment> {
+suspend fun getAppointmentsForUser(userId: String): List<Appointment> {
     val db = FirebaseFirestore.getInstance()
-    val appointments = mutableListOf<VaccineAppointment>()
+    val appointments = mutableListOf<Appointment>()
 
     try {
         val result = db.collection("appointments")
@@ -158,7 +161,7 @@ suspend fun getAppointmentsForUser(userId: String): List<VaccineAppointment> {
             .get()
             .await()  // Await the result of the query
         for (document in result) {
-            val appointment = document.toObject(VaccineAppointment::class.java)
+            val appointment = document.toObject(Appointment::class.java)
             appointments.add(appointment)
         }
     } catch (e: Exception) {

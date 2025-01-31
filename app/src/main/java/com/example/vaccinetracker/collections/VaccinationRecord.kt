@@ -1,4 +1,4 @@
-package com.example.vaccinetracker.data
+package com.example.vaccinetracker.collections
 
 data class VaccinationRecord(
     val vaccinationRecordUid: String,

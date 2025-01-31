@@ -1,4 +1,4 @@
-package com.example.vaccinetracker.data
+package com.example.vaccinetracker.collections
 
 data class User(
     var id: String = "",  // Firebase Auth UID
@@ -8,6 +8,7 @@ data class User(
     val surname: String = "",
     val gender: String = "",
     val dateOfBirth: String = "",
-    val vaccinationRecords: MutableList<String> = mutableListOf() // List of Histories for
+    val vaccinationRecords: MutableList<String> = mutableListOf(),
+    val appointments: MutableList<String> = mutableListOf()// List of Histories for
 // this user where one vaccinationHistory containts data about one vaccine the user made
 )

@@ -7,12 +7,22 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
+        android:installLocation="auto"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.VaccineTracker"
-        android:installLocation="auto"
         tools:targetApi="31">
+        <activity
+            android:name=".activities.AdminLogInAktivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.AdminLogInActivity"
+            android:exported="false"
+            android:label="@string/title_activity_admin_log_in" />
+        <activity
+            android:name=".activities.AdminActivity"
+            android:exported="false" />
         <activity
             android:name=".activities.AccountActivity"
             android:exported="true" />

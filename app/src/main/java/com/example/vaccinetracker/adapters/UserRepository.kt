@@ -1,5 +1,6 @@
 package com.example.vaccinetracker.data
 
+import com.example.vaccinetracker.collections.User
 import com.google.firebase.firestore.FirebaseFirestore
 
 class UserRepository {

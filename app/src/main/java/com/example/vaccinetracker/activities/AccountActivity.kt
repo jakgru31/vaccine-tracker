@@ -24,11 +24,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.vaccinetracker.adapters.CertificateAdapter
-import com.example.vaccinetracker.adapters.VaccinationHistoryAdapter
-import com.example.vaccinetracker.data.Certificate
-import com.example.vaccinetracker.data.User
+import com.example.vaccinetracker.collections.Certificate
+import com.example.vaccinetracker.collections.User
 import com.example.vaccinetracker.data.UserRepository
-import com.example.vaccinetracker.data.VaccinationRecord
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.zxing.BarcodeFormat
@@ -36,7 +34,6 @@ import com.google.zxing.MultiFormatWriter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import userMakesVaccination
-
 //import userMakesVaccination
 
 class AccountActivity : ComponentActivity() {
