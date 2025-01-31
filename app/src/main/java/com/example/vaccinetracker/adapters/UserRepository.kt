@@ -3,6 +3,7 @@ package com.example.vaccinetracker.data
 import com.example.vaccinetracker.collections.User
 import com.google.firebase.firestore.FirebaseFirestore
 
+//TODO LOads users data to console
 class UserRepository {
     private val db = FirebaseFirestore.getInstance()
 

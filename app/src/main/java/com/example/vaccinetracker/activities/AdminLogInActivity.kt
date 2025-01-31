@@ -6,25 +6,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,22 +20,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.auth.FirebaseAuth
+import android.util.Patterns
+import com.google.firebase.firestore.FirebaseFirestore
 
-class LoginActivity: ComponentActivity() {
+class AdminLogInActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             VaccineTrackerTheme {
-                LogInScreen(
-                    onSignUpClick = {
-                        val intent = Intent(this, SignUpActivity::class.java)
-                        startActivity(intent)
-                    },
+                AdminLogInScreen(
                     onSignInSuccess = {
-                        val intent = Intent(this, AccountActivity::class.java)
+                        val intent = Intent(this, AdminActivity::class.java)
                         startActivity(intent)
-
                     }
                 )
             }
@@ -59,15 +41,13 @@ class LoginActivity: ComponentActivity() {
 }
 
 @Composable
-fun LogInScreen(
-    onSignUpClick: () -> Unit,
+fun AdminLogInScreen(
     onSignInSuccess: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var successMessage by remember { mutableStateOf<String?>(null) }
-    var logInStatus by remember { mutableStateOf("") }
+    val successMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -77,7 +57,7 @@ fun LogInScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Welcome to Vaccine Tracker",
+            text = "Log in as Admin to Vaccine Tracker",
             fontSize = MaterialTheme.typography.headlineSmall.fontSize,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(12.dp)
@@ -109,10 +89,12 @@ fun LogInScreen(
                     FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                logInStatus = "Hello there"
-                                onSignInSuccess()
+                                // Proceed
+                                print("hello there ")
+                                //checkIfUserIsAdmin(email, onSignInSuccess)
                             } else {
-                                errorMessage = task.exception?.message
+                                // Show specific error message
+                                errorMessage = task.exception?.localizedMessage ?: "An error occurred"
                             }
                         }
                 } else {
@@ -125,44 +107,10 @@ fun LogInScreen(
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Sign In")
-        }
-
-        OutlinedButton(
-            onClick = onSignUpClick,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = Color(0xFFE0B400)
-            )
-        ) {
-            Text("Sign Up")
+            Text("Log In")
         }
 
         Spacer(modifier = Modifier.padding(8.dp))
-
-        Button(
-            onClick = {
-                if (email.isNotBlank()) {
-                    FirebaseAuth.getInstance().sendPasswordResetEmail(email)
-                        .addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                successMessage = "Password reset email sent to $email"
-                            } else {
-                                errorMessage = task.exception?.message
-                            }
-                        }
-                } else {
-                    errorMessage = "Please enter your email address to reset your password"
-                }
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF007BFF),
-                contentColor = Color.White
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Forgot Password")
-        }
 
         errorMessage?.let {
             Spacer(modifier = Modifier.padding(8.dp))
@@ -173,30 +121,44 @@ fun LogInScreen(
             Spacer(modifier = Modifier.padding(8.dp))
             Text(text = it, color = Color.Green)
         }
-
-        Text(
-            text = logInStatus,
-            modifier = Modifier.fillMaxWidth(),
-            color = Color(0xFF0073CE)
-        )
     }
 }
 
-fun validate(email: String, password: String): Boolean {
-    return email.isNotBlank() && password.isNotBlank()
+/*
+fun checkIfUserIsAdmin(email: String, onSignInSuccess: () -> Unit) {
+    // Firebase Firestore instance
+    val db = FirebaseFirestore.getInstance()
+
+    // Query Firestore to check if this email is in the "admins" collection
+    db.collection("admins")
+        .whereEqualTo("email", email)
+        .get()
+        .addOnSuccessListener { result ->
+            if (!result.isEmpty) {
+                // User is an admin, proceed to the Admin Activity
+                onSignInSuccess()
+            } else {
+                // User is not an admin
+                // You can show an error or navigate to a different activity
+                println("User is not an admin")
+            }
+        }
+        .addOnFailureListener { exception ->
+            println("Error checking admin status: $exception")
+        }
 }
+*/
+
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Preview(showBackground = true)
 @Composable
-fun LogInScreenPreview() {
+fun AdminLogInScreenPreview() {
     VaccineTrackerTheme {
         Scaffold(modifier = Modifier.fillMaxSize()) {
-            LogInScreen(
-                onSignUpClick = {},
+            AdminLogInScreen(
                 onSignInSuccess = {}
             )
         }
     }
 }
-

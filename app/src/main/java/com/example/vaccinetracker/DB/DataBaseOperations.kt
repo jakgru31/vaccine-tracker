@@ -1,11 +1,15 @@
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.example.vaccinetracker.collections.Appointment
 import com.example.vaccinetracker.collections.User
 import com.example.vaccinetracker.collections.VaccinationRecord
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.type.DateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -99,8 +103,8 @@ suspend fun userMakesVaccination(userUid: String, vaccineUid: String, dateAdmini
     }
 }
 
-
-suspend fun userMakesAppointment(userId: String, vaccineId: String, appointmentDate: String): Boolean {
+//TODO Works
+suspend fun userMakesAppointment(userId: String, vaccineId: String, appointmentDate: Timestamp): Boolean {
     val db = FirebaseFirestore.getInstance()
     val appointmentId = UUID.randomUUID().toString()
     val appointment = Appointment(appointmentId, userId, vaccineId, appointmentDate)
@@ -118,6 +122,47 @@ suspend fun userMakesAppointment(userId: String, vaccineId: String, appointmentD
 }
 
 
+//TODO needs to be checked
+fun deleteAppointment(docId: String) {
+
+    val db = FirebaseFirestore.getInstance()
+    val docRef = db.collection("appointments").document(docId)
+
+    docRef.delete()
+        .addOnSuccessListener {
+            // Document was successfully deleted
+            println("Document successfully deleted!")
+        }
+        .addOnFailureListener { e ->
+            // If an error occurs
+            println("Error deleting document: $e")
+        }
+}
+
+
+// Suspend function to load appointments from Firestore
+/*suspend fun loadAppointments(): SnapshotStateList<Appointment> {
+    val db = FirebaseFirestore.getInstance()
+    val collectionRef = db.collection("appointments")
+
+    val appointments = mutableStateListOf<Appointment>() // Use mutableStateListOf()
+
+    try {
+        val querySnapshot = collectionRef.get().await()  // Await Firestore query
+        for (document in querySnapshot.documents) {
+            val appointment = document.toObject(Appointment::class.java)
+            appointment?.let { appointments.add(it) }
+        }
+        println("Appointments loaded: ${appointments.size}")
+    } catch (exception: Exception) {
+        println("Error getting documents: $exception")
+    }
+
+    return appointments
+}*/
+
+
+/*
 suspend fun fetchUserData(userId: String): User? {
     val db = FirebaseFirestore.getInstance()
     return try {
@@ -135,64 +180,5 @@ suspend fun fetchUserData(userId: String): User? {
         null
     }
 }
-
-
-
-suspend fun addVaccineAppointment(appointment: Appointment) {
-    val db = FirebaseFirestore.getInstance()
-    val appointmentRef = db.collection("appointments").document(appointment.appointmentId)
-
-    try {
-        appointmentRef.set(appointment).await()
-        println("Appointment added successfully")
-    } catch (e: Exception) {
-        println("Error adding appointment: $e")
-    }
-}
-
-
-suspend fun getAppointmentsForUser(userId: String): List<Appointment> {
-    val db = FirebaseFirestore.getInstance()
-    val appointments = mutableListOf<Appointment>()
-
-    try {
-        val result = db.collection("appointments")
-            .whereEqualTo("userId", userId)
-            .get()
-            .await()  // Await the result of the query
-        for (document in result) {
-            val appointment = document.toObject(Appointment::class.java)
-            appointments.add(appointment)
-        }
-    } catch (e: Exception) {
-        println("Error getting appointments: $e")
-    }
-
-    return appointments
-}
-
-
-suspend fun updateAppointmentStatus(appointmentId: String, status: String) {
-    val db = FirebaseFirestore.getInstance()
-    val appointmentRef = db.collection("appointments").document(appointmentId)
-
-    try {
-        appointmentRef.update("status", status).await()
-        println("Appointment status updated")
-    } catch (e: Exception) {
-        println("Error updating appointment status: $e")
-    }
-}
-
-/*suspend fun addVaccinationHistory(history: VaccinationHistory) {
-    val db = FirebaseFirestore.getInstance()
-    val historyRef = db.collection("vaccinationHistory").document(history.historyId)
-
-    try {
-        historyRef.set(history).await()
-        println("Vaccination history added successfully")
-    } catch (e: Exception) {
-        println("Error adding vaccination history: $e")
-    }
-}*/
+*/
 

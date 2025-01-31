@@ -14,15 +14,12 @@
         android:theme="@style/Theme.VaccineTracker"
         tools:targetApi="31">
         <activity
-            android:name=".activities.AdminLogInAktivity"
-            android:exported="false" />
-        <activity
             android:name=".activities.AdminLogInActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/title_activity_admin_log_in" />
         <activity
             android:name=".activities.AdminActivity"
-            android:exported="false" />
+            android:exported="true" />
         <activity
             android:name=".activities.AccountActivity"
             android:exported="true" />
