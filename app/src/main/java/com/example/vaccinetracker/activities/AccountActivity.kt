@@ -2,6 +2,7 @@ package com.example.vaccinetracker.activities
 
 import android.app.TimePickerDialog
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
@@ -14,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -163,11 +165,15 @@ fun HomeScreen() {
         Text(text = "Home", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Add logout button here
+        LogoutButton()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         when {
             isLoading -> Text(text = "Loading...")
             errorMessage != null -> Text(text = errorMessage ?: "An unknown error occurred.")
             userData != null -> {
-                print(userData?.id)
                 Text(text = "Welcome, ${userData?.name ?: "User"}")
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(text = "Email: ${userData?.email ?: "Not available"}")
@@ -187,6 +193,24 @@ fun HomeScreen() {
             }
             else -> Text(text = "No data available.")
         }
+    }
+}
+
+@Composable
+fun LogoutButton() {
+    val context = LocalContext.current
+
+    IconButton(onClick = {
+        FirebaseAuth.getInstance().signOut()
+        val intent = Intent(context, LoginActivity::class.java)
+        context.startActivity(intent)
+
+        // Optionally, finish the current activity to prevent back navigation
+        if (context is AccountActivity) {
+            context.finish()
+        }
+    }) {
+        Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
     }
 }
 
