@@ -9,6 +9,7 @@ data class User(
     val gender: String = "",
     val dateOfBirth: String = "",
     val vaccinationRecords: MutableList<String> = mutableListOf(),
-    val appointments: MutableList<String> = mutableListOf()// List of Histories for
+    val appointments: MutableList<String> = mutableListOf(),
+    val isAdmin: Boolean = false // List of Histories for
 // this user where one vaccinationHistory containts data about one vaccine the user made
 )

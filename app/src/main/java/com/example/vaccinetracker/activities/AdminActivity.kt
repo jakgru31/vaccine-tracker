@@ -166,9 +166,4 @@ fun generateRandomDate(): DateTime {
 
 // Extension function to convert Google DateTime to LocalDateTime
 // Extension function to convert Firestore timestamp (Long) to LocalDateTime
-@SuppressLint("NewApi")
-fun DateTime.toLocalDateTime(): LocalDateTime {
-    return Instant.ofEpochSecond(this.seconds.toLong(), this.nanos.toLong())
-        .atZone(ZoneId.systemDefault())
-        .toLocalDateTime()
-}
+

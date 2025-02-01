@@ -3,6 +3,7 @@ package com.example.vaccinetracker.activities
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -21,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.auth.FirebaseAuth
 import android.util.Patterns
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.firestore.FirebaseFirestore
 
 class AdminLogInActivity : ComponentActivity() {
@@ -85,20 +89,52 @@ fun AdminLogInScreen(
 
         Button(
             onClick = {
-                if (validate(email, password)) {
+                if (validate(email, password))
+                {
+                    if (!Patterns.EMAIL_ADDRESS.matcher(email).matches())
+                    {
+                        errorMessage = "Please enter a valid email address"
+                        return@Button // Stop here if email is invalid
+                    }
+
                     FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
-                        .addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                // Proceed
-                                print("hello there ")
-                                //checkIfUserIsAdmin(email, onSignInSuccess)
-                            } else {
-                                // Show specific error message
-                                errorMessage = task.exception?.localizedMessage ?: "An error occurred"
+                        .addOnCompleteListener { authTask ->
+                            if (authTask.isSuccessful) {
+                                val user = FirebaseAuth.getInstance().currentUser
+                                if (user != null) {
+                                    val db = FirebaseFirestore.getInstance()
+                                    db.collection("users").document(user.uid).get()
+                                        .addOnSuccessListener { document ->
+                                            if (document != null && document.exists()) {
+                                                val isAdmin = document.getBoolean("admin") ?: false
+                                                if (isAdmin) {
+                                                    onSignInSuccess()
+                                                } else {
+                                                    errorMessage =
+                                                        "You are not authorized as an admin."
+                                                    FirebaseAuth.getInstance().signOut()
+                                                }
+                                            } else {
+                                                errorMessage = "User document not found."
+                                                FirebaseAuth.getInstance()
+                                                    .signOut() // Handle as needed
+                                            }
+                                        }
+                                        .addOnFailureListener { exception ->
+                                            errorMessage =
+                                                "Error checking admin status: ${exception.message}"
+                                            Log.e(
+                                                "FirestoreError",
+                                                "Error checking admin status: ${exception.message}",
+                                                exception
+                                            )
+                                        }
+                                } else {
+                                    errorMessage =
+                                        "An unexpected error occurred. Please try again." // User should not be null after auth
+                                }
                             }
                         }
-                } else {
-                    errorMessage = "Please fill out all the fields"
                 }
             },
             colors = ButtonDefaults.buttonColors(
@@ -124,30 +160,6 @@ fun AdminLogInScreen(
     }
 }
 
-/*
-fun checkIfUserIsAdmin(email: String, onSignInSuccess: () -> Unit) {
-    // Firebase Firestore instance
-    val db = FirebaseFirestore.getInstance()
-
-    // Query Firestore to check if this email is in the "admins" collection
-    db.collection("admins")
-        .whereEqualTo("email", email)
-        .get()
-        .addOnSuccessListener { result ->
-            if (!result.isEmpty) {
-                // User is an admin, proceed to the Admin Activity
-                onSignInSuccess()
-            } else {
-                // User is not an admin
-                // You can show an error or navigate to a different activity
-                println("User is not an admin")
-            }
-        }
-        .addOnFailureListener { exception ->
-            println("Error checking admin status: $exception")
-        }
-}
-*/
 
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
