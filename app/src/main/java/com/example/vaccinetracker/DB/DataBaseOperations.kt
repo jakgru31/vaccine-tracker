@@ -132,6 +132,20 @@ suspend fun userMakesAppointment(userId: String, vaccineId: String, appointmentD
 
     return withContext(Dispatchers.IO) {
         try {
+
+            val appointments = db.collection("appointments")
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("vaccineId", vaccineId)
+                .get()
+                .await()
+
+            // If there's already a record with this vaccineUid for the user, return false
+            if (!appointments.isEmpty) {
+                println("User has already received this vaccine.")
+                return@withContext false
+            }
+            else{println(appointments.isEmpty)}
+
             db.collection("appointments").document(appointmentId).set(appointment).await()
             println("Appointment added successfully")
             true
