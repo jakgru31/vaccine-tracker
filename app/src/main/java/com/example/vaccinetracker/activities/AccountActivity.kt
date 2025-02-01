@@ -28,11 +28,13 @@ import com.example.vaccinetracker.collections.Certificate
 import com.example.vaccinetracker.collections.User
 import com.example.vaccinetracker.data.UserRepository
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import userMakesAppointment
 import userMakesVaccination
 //import userMakesVaccination
 
@@ -215,6 +217,24 @@ fun VaccinesScreen(
 
         }) {
             Text("Make Vaccine")
+        }
+
+
+        Button(onClick = {
+            userId?.let {
+                coroutineScope.launch {
+                    val success = userMakesAppointment(it, vaccineUid, Timestamp.now())
+                    if (!success) {
+                        println("false")
+                    } else {
+                        // Handle success, e.g., show a success message, navigate to another screen
+                        println("Success")
+                    }
+                }
+            }
+
+        }) {
+            Text("Make Appointment")
         }
 
         // Error Dialog
