@@ -231,15 +231,32 @@ fun VaccinesScreen(
             )
         }
     }
-}@Composable
-fun CertificatesScreen() {
-    val certificateAdapter = remember { CertificateAdapter() }
-    val certificates = remember { mutableStateListOf<Certificate>() }
+}
 
-    LaunchedEffect(Unit) {
-        certificateAdapter.fetchCertificatesFromFirebase { fetchedCertificates ->
-            certificates.clear()
-            certificates.addAll(fetchedCertificates)
+@Composable
+fun CertificatesScreen() {
+    val userRepository = remember { UserRepository() }
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    var userData by remember { mutableStateOf<User?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var selectedCertificate by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(currentUser?.uid) {
+        currentUser?.uid?.let { userId ->
+            isLoading = true
+            errorMessage = null
+            userRepository.fetchUserData(userId) { fetchedUser ->
+                if (fetchedUser != null) {
+                    userData = fetchedUser
+                } else {
+                    errorMessage = "Failed to fetch user data."
+                }
+                isLoading = false
+            }
+        } ?: run {
+            errorMessage = "No user logged in."
+            isLoading = false
         }
     }
 
@@ -251,15 +268,34 @@ fun CertificatesScreen() {
         Text(text = "Certificates", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
-        LazyColumn {
-            items(certificates) { certificate ->
-                Button(
-                    onClick = { /* Handle certificate selection */ },
-                    modifier = Modifier.padding(vertical = 8.dp)
-                ) {
-                    Text(text = "View Certificate: ${certificate.vaccineName}")
+        when {
+            isLoading -> Text(text = "Loading...")
+            errorMessage != null -> Text(text = errorMessage ?: "An unknown error occurred.")
+            userData != null -> {
+                if (userData?.vaccinationRecords.isNullOrEmpty()) {
+                    Text(text = "No certificates available.")
+                } else {
+                    LazyColumn {
+                        items(userData!!.vaccinationRecords) { certificate ->
+                            Button(
+                                onClick = {
+                                    selectedCertificate = certificate
+
+                                },
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            ) {
+                                Text(text = "View Certificate: ${certificate}")
+                            }
+                        }
+                    }
                 }
             }
+            else -> Text(text = "No data available.")
+        }
+
+        selectedCertificate?.let { certificate ->
+            Spacer(modifier = Modifier.height(16.dp))
+            QRCodeView(certificate)
         }
     }
 }
@@ -280,6 +316,7 @@ fun QRCodeView(qrCodeData: String) {
         }
     }
 }
+
 
 fun generateQRCodeBitmap(data: String): Bitmap? {
     return try {
