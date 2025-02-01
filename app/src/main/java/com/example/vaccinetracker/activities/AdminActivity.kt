@@ -18,9 +18,11 @@ import androidx.compose.ui.unit.dp
 import com.example.vaccinetracker.collections.Appointment
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.type.DateTime
+import deleteAppointment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import userMakesVaccination
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -70,14 +72,20 @@ fun AdminMainScreen() {
                     AppointmentItem(
                         appointment,
                         onConfirm = {
-                            usv(appointment)
-                            visibilityMap[appointment.appointmentId] = false
                             coroutineScope.launch {
-                                removeWithDelay(appointments, appointment, visibilityMap)
+                                // Calling the suspend function inside the coroutine
+                                val success = userMakesVaccination(appointment.userId, appointment.vaccineId, appointment.getLocalDateTime().toString(), 1)
+                                if (success) {
+                                    deleteAppointment(appointment.appointmentId)
+                                    visibilityMap[appointment.appointmentId] = false
+                                    removeWithDelay(appointments, appointment, visibilityMap)
+                                } else {
+                                    println("User has already made the vaccine")
+                                }
                             }
                         },
                         onReject = {
-                            reject(appointment)
+                            deleteAppointment(appointment.appointmentId)
                             visibilityMap[appointment.appointmentId] = false
                             coroutineScope.launch {
                                 removeWithDelay(appointments, appointment, visibilityMap)
@@ -127,9 +135,7 @@ fun hello() {
     println("Checking overdue appointments...")
 }
 
-fun usv(appointment: Appointment) {
-    println("Confirmed vaccination for User ID: ${appointment.userId}")
-}
+
 
 fun reject(appointment: Appointment) {
     println("Rejected vaccination for User ID: ${appointment.userId}")
