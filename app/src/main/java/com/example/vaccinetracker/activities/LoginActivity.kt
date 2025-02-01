@@ -97,7 +97,6 @@ fun LogInScreen(
                     FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                addVaccinesToFirestore()
                                 logInStatus = "Hello there"
                                 onSignInSuccess()
                             } else {

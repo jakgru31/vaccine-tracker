@@ -206,51 +206,58 @@ suspend fun loadAppointments(): List<Appointment> {
 
 
 fun addVaccinesToFirestore() {
-
     val vaccinesList = listOf(
-        Vaccine(vaccineId = "1", name = "COVID-19 Vaccine", manufacturer = "Pfizer", type = "mRNA", dosesRequired = 2, recommendedInterval = 21, commonSideEffects = listOf("Fatigue", "Headache", "Pain at injection site")),
-        Vaccine(vaccineId = "2", name = "Influenza Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Soreness at injection site", "Mild fever", "Headache")),
-        Vaccine(vaccineId = "3", name = "Hepatitis B Vaccine", manufacturer = "Merck", type = "Inactivated", dosesRequired = 3, recommendedInterval = 30, commonSideEffects = listOf("Soreness at injection site", "Fatigue", "Headache")),
-        Vaccine(vaccineId = "4", name = "Measles, Mumps, Rubella Vaccine (MMR)", manufacturer = "Merck", type = "Live", dosesRequired = 2, recommendedInterval = 28, commonSideEffects = listOf("Fever", "Rash", "Soreness")),
-        Vaccine(vaccineId = "5", name = "Polio Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 4, recommendedInterval = 60, commonSideEffects = listOf("Pain at injection site", "Fever")),
-        Vaccine(vaccineId = "6", name = "Human Papillomavirus (HPV) Vaccine", manufacturer = "Merck", type = "Inactivated", dosesRequired = 3, recommendedInterval = 180, commonSideEffects = listOf("Soreness at injection site", "Fever")),
-        Vaccine(vaccineId = "7", name = "Diphtheria, Tetanus, and Pertussis Vaccine (DTaP)", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 5, recommendedInterval = 60, commonSideEffects = listOf("Soreness", "Swelling", "Fever")),
-        Vaccine(vaccineId = "8", name = "Hepatitis A Vaccine", manufacturer = "Merck", type = "Inactivated", dosesRequired = 2, recommendedInterval = 180, commonSideEffects = listOf("Soreness at injection site", "Headache", "Fatigue")),
-        Vaccine(vaccineId = "9", name = "Rotavirus Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 3, recommendedInterval = 60, commonSideEffects = listOf("Fever", "Diarrhea", "Vomiting")),
-        Vaccine(vaccineId = "10", name = "Varicella (Chickenpox) Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 2, recommendedInterval = 28, commonSideEffects = listOf("Rash", "Fever", "Tiredness")),
-        Vaccine(vaccineId = "11", name = "Pneumococcal Vaccine", manufacturer = "Pfizer", type = "Inactivated", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Redness at injection site", "Fever")),
-        Vaccine(vaccineId = "12", name = "Meningococcal Vaccine", manufacturer = "Sanofi Pasteur", type = "Conjugate", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Soreness at injection site", "Fever")),
-        Vaccine(vaccineId = "13", name = "Shingles Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Pain at injection site", "Headache", "Fever")),
-        Vaccine(vaccineId = "14", name = "Yellow Fever Vaccine", manufacturer = "Sanofi Pasteur", type = "Live", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Soreness at injection site", "Fever")),
-        Vaccine(vaccineId = "15", name = "Typhoid Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Soreness", "Fatigue", "Headache")),
-        Vaccine(vaccineId = "16", name = "Bacillus Calmette-Guérin (BCG) Vaccine", manufacturer = "Sanofi Pasteur", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Pain at injection site", "Fever")),
-        Vaccine(vaccineId = "17", name = "Dengue Vaccine", manufacturer = "Sanofi Pasteur", type = "Live", dosesRequired = 3, recommendedInterval = 180, commonSideEffects = listOf("Pain at injection site", "Headache", "Fatigue")),
-        Vaccine(vaccineId = "18", name = "Cholera Vaccine", manufacturer = "Euvichol", type = "Inactivated", dosesRequired = 2, recommendedInterval = 30, commonSideEffects = listOf("Diarrhea", "Fever")),
-        Vaccine(vaccineId = "19", name = "Zoster Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Soreness", "Redness")),
-        Vaccine(vaccineId = "20", name = "Smallpox Vaccine", manufacturer = "Bavarian Nordic", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Fever", "Rash")),
-        Vaccine(vaccineId = "21", name = "COVID-19 Vaccine", manufacturer = "Moderna", type = "mRNA", dosesRequired = 2, recommendedInterval = 28, commonSideEffects = listOf("Fatigue", "Headache", "Pain at injection site")),
-        Vaccine(vaccineId = "22", name = "Hepatitis C Vaccine", manufacturer = "Gilead Sciences", type = "Inactivated", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Fatigue", "Soreness")),
-        Vaccine(vaccineId = "23", name = "Ebola Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 2, recommendedInterval = 0, commonSideEffects = listOf("Fever", "Headache")),
-        Vaccine(vaccineId = "24", name = "HIV Vaccine", manufacturer = "Various", type = "Inactivated", dosesRequired = 3, recommendedInterval = 180, commonSideEffects = listOf("Pain", "Swelling")),
-        Vaccine(vaccineId = "25", name = "Rabies Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 5, recommendedInterval = 0, commonSideEffects = listOf("Pain at injection site", "Headache", "Fever")),
-        Vaccine(vaccineId = "26", name = "Cervical Cancer Vaccine", manufacturer = "Merck", type = "Inactivated", dosesRequired = 3, recommendedInterval = 180, commonSideEffects = listOf("Soreness at injection site", "Headache", "Dizziness")),
-        Vaccine(vaccineId = "27", name = "Mumps Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Soreness", "Fever")),
-        Vaccine(vaccineId = "28", name = "Rubella Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Rash", "Fever", "Soreness")),
-        Vaccine(vaccineId = "29", name = "Typhus Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Soreness", "Headache")),
-        Vaccine(vaccineId = "30", name = "Polio Vaccine (Oral)", manufacturer = "Sanofi Pasteur", type = "Live", dosesRequired = 4, recommendedInterval = 60, commonSideEffects = listOf("Mild fever", "Fatigue"))
+        Vaccine(name = "COVID-19 Vaccine", manufacturer = "Pfizer", type = "mRNA", dosesRequired = 2, recommendedInterval = 21, commonSideEffects = listOf("Fatigue", "Headache", "Pain at injection site")),
+        Vaccine(name = "Influenza Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Soreness at injection site", "Mild fever", "Headache")),
+        Vaccine(name = "Hepatitis B Vaccine", manufacturer = "Merck", type = "Inactivated", dosesRequired = 3, recommendedInterval = 30, commonSideEffects = listOf("Soreness at injection site", "Fatigue", "Headache")),
+        Vaccine(name = "Measles, Mumps, Rubella Vaccine (MMR)", manufacturer = "Merck", type = "Live", dosesRequired = 2, recommendedInterval = 28, commonSideEffects = listOf("Fever", "Rash", "Soreness")),
+        Vaccine(name = "Chickenpox Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 2, recommendedInterval = 28, commonSideEffects = listOf("Rash", "Fever", "Tiredness")),
+        Vaccine(name = "Polio Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 4, recommendedInterval = 60, commonSideEffects = listOf("Soreness at injection site", "Fever")),
+        Vaccine(name = "Hepatitis A Vaccine", manufacturer = "GlaxoSmithKline", type = "Inactivated", dosesRequired = 2, recommendedInterval = 180, commonSideEffects = listOf("Soreness at injection site", "Fatigue")),
+        Vaccine(name = "Diphtheria, Tetanus, Pertussis (DTP) Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 5, recommendedInterval = 60, commonSideEffects = listOf("Soreness at injection site", "Fever", "Irritability")),
+        Vaccine(name = "Haemophilus Influenzae Type B Vaccine", manufacturer = "GlaxoSmithKline", type = "Inactivated", dosesRequired = 3, recommendedInterval = 60, commonSideEffects = listOf("Fever", "Soreness")),
+        Vaccine(name = "Meningococcal Vaccine", manufacturer = "Pfizer", type = "Conjugate", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Soreness at injection site", "Fever", "Headache")),
+        Vaccine(name = "Shingles Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Redness at injection site", "Fever", "Tiredness")),
+        Vaccine(name = "Yellow Fever Vaccine", manufacturer = "Sanofi Pasteur", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Fever", "Headache", "Tiredness")),
+        Vaccine(name = "Rabies Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 3, recommendedInterval = 21, commonSideEffects = listOf("Redness at injection site", "Fever", "Headache")),
+        Vaccine(name = "Typhoid Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Headache", "Soreness at injection site", "Fever")),
+        Vaccine(name = "Rotavirus Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 3, recommendedInterval = 28, commonSideEffects = listOf("Diarrhea", "Vomiting", "Fever")),
+        Vaccine(name = "Human Papillomavirus (HPV) Vaccine", manufacturer = "Merck", type = "Recombinant", dosesRequired = 3, recommendedInterval = 180, commonSideEffects = listOf("Headache", "Pain at injection site", "Fatigue")),
+        Vaccine(name = "Pneumococcal Vaccine", manufacturer = "Pfizer", type = "Conjugate", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Redness at injection site", "Soreness", "Fever")),
+        Vaccine(name = "Cervical Cancer Vaccine", manufacturer = "GlaxoSmithKline", type = "Recombinant", dosesRequired = 3, recommendedInterval = 180, commonSideEffects = listOf("Fatigue", "Pain at injection site", "Headache")),
+        Vaccine(name = "Bacillus Calmette-Guérin (BCG) Vaccine", manufacturer = "Sanofi Pasteur", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Redness at injection site", "Soreness", "Low-grade fever")),
+        Vaccine(name = "Pneumococcal 23-Valent Vaccine", manufacturer = "Pfizer", type = "Polysaccharide", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Soreness at injection site", "Fever", "Muscle aches")),
+        Vaccine(name = "Dengue Vaccine", manufacturer = "Sanofi Pasteur", type = "Live", dosesRequired = 3, recommendedInterval = 180, commonSideEffects = listOf("Headache", "Nausea", "Soreness at injection site")),
+        Vaccine(name = "Tick-borne Encephalitis Vaccine", manufacturer = "Pfizer", type = "Inactivated", dosesRequired = 3, recommendedInterval = 21, commonSideEffects = listOf("Fatigue", "Fever", "Headache")),
+        Vaccine(name = "Anthrax Vaccine", manufacturer = "Emergent BioSolutions", type = "Inactivated", dosesRequired = 6, recommendedInterval = 60, commonSideEffects = listOf("Soreness at injection site", "Fever", "Fatigue")),
+        Vaccine(name = "Smallpox Vaccine", manufacturer = "Bavarian Nordic", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Soreness at injection site", "Fever", "Rash")),
+        Vaccine(name = "Cholera Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 2, recommendedInterval = 60, commonSideEffects = listOf("Diarrhea", "Abdominal pain", "Fever")),
+        Vaccine(name = "Ebola Vaccine", manufacturer = "Johnson & Johnson", type = "Viral vector", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Fever", "Pain at injection site", "Fatigue")),
+        Vaccine(name = "Zika Virus Vaccine", manufacturer = "Inovio Pharmaceuticals", type = "DNA", dosesRequired = 2, recommendedInterval = 180, commonSideEffects = listOf("Fever", "Headache", "Soreness at injection site")),
+        Vaccine(name = "Malaria Vaccine", manufacturer = "GSK", type = "Viral vector", dosesRequired = 4, recommendedInterval = 28, commonSideEffects = listOf("Fever", "Fatigue", "Pain at injection site")),
+        Vaccine(name = "West Nile Virus Vaccine", manufacturer = "Pfizer", type = "Inactivated", dosesRequired = 3, recommendedInterval = 180, commonSideEffects = listOf("Headache", "Fatigue", "Soreness at injection site")),
+        Vaccine(name = "Avian Influenza Vaccine", manufacturer = "Boehringer Ingelheim", type = "Inactivated", dosesRequired = 2, recommendedInterval = 30, commonSideEffects = listOf("Fever", "Soreness at injection site", "Headache")),
+        Vaccine(name = "COVID-19 Vaccine (Johnson & Johnson)", manufacturer = "Johnson & Johnson", type = "Viral vector", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Fatigue", "Headache", "Pain at injection site"))
     )
 
+
     val db = FirebaseFirestore.getInstance()
-    val vaccinesCollection = db.collection("vaccine")
+    val vaccinesCollection = db.collection("vaccines")
 
     vaccinesList.forEach { vaccine ->
-        vaccinesCollection.document(vaccine.vaccineId).set(vaccine)
-            .addOnSuccessListener {
-                println("Successfully added vaccine: ${vaccine.name}")
+        vaccinesCollection.add(vaccine)
+            .addOnSuccessListener { documentReference ->
+                println("Successfully added vaccine: ${vaccine.name} with ID: ${documentReference.id}")
             }
             .addOnFailureListener { e ->
-                println("Error adding vaccine: ${e.message}")
+                if (e is FirebaseFirestoreException) {
+                    println(" Firestore Error (${e.code}): ${e.message}")
+                } else {
+                    println(" Unexpected Error: ${e.localizedMessage}")
+                }
+                e.printStackTrace()
             }
+
     }
 }
 
