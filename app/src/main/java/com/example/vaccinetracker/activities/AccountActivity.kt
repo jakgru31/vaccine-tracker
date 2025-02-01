@@ -10,6 +10,8 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,7 +26,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -39,10 +43,12 @@ import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.QuerySnapshot
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import userMakesAppointment
 import userMakesVaccination
 import java.time.LocalDateTime
@@ -395,8 +401,6 @@ fun showDateTimePicker(context: Context, onDateSelected: (Timestamp) -> Unit) {
 
 
 
-
-
 @Composable
 fun CertificatesScreen() {
     val userRepository = remember { UserRepository() }
@@ -404,8 +408,10 @@ fun CertificatesScreen() {
     var userData by remember { mutableStateOf<User?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var selectedCertificate by remember { mutableStateOf<String?>(null) } // Keeps track of the selected certificate
+    var certificateForQrView by remember { mutableStateOf<String?>(null) }
+    var qrCodeVisible by remember { mutableStateOf(false) }
 
+    // Fetch user data
     LaunchedEffect(currentUser?.uid) {
         currentUser?.uid?.let { userId ->
             isLoading = true
@@ -425,64 +431,123 @@ fun CertificatesScreen() {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            Text(text = "Certificates", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(16.dp))
+        if (certificateForQrView != null) {
+            // Trigger animation when qrCodeVisible changes
+            LaunchedEffect(certificateForQrView) {
+                qrCodeVisible = true // Start animation when certificateForQrView is set
+            }
 
-            when {
-                isLoading -> Text(text = "Loading...")
-                errorMessage != null -> Text(text = errorMessage ?: "An unknown error occurred.")
-                userData != null -> {
-                    if (userData?.vaccinationRecords.isNullOrEmpty()) {
-                        Text(text = "No certificates available.")
-                    } else {
-                        LazyColumn {
-                            items(userData!!.vaccinationRecords) { certificate ->
-                                CertificateItem(
-                                    certificate = certificate,
-                                    isQrVisible = selectedCertificate == certificate, // Show QR code only if selected
-                                    onClick = {
-                                        selectedCertificate = if (selectedCertificate == certificate) null else certificate // Toggle the certificate visibility
-                                    }
-                                )
+            // Fullscreen QR code box with 3D rotation animation
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(ComposeColor.Black.copy(alpha = 0.8f))
+                    .clickable {
+                        certificateForQrView = null
+                        qrCodeVisible = false // Reset visibility for next animation
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                // 3D rotation effect on X, Y, and Z axes
+                val rotationX by animateFloatAsState(
+                    targetValue = if (qrCodeVisible) 360f else 0f,
+                    animationSpec = tween(durationMillis = 800)
+                )
+
+                val rotationY by animateFloatAsState(
+                    targetValue = if (qrCodeVisible) 360f else 0f,
+                    animationSpec = tween(durationMillis = 800)
+                )
+
+                val rotationZ by animateFloatAsState(
+                    targetValue = if (qrCodeVisible) 360f else 0f,
+                    animationSpec = tween(durationMillis = 800)
+                )
+
+                QRCodeView(
+                    qrCodeData = certificateForQrView!!,
+                    modifier = Modifier
+                        .fillMaxSize()      // Fill the entire screen in fullscreen
+                        .aspectRatio(1f)    // Maintain square aspect ratio (important for QR)
+                        .graphicsLayer(
+                            rotationX = rotationX, // Rotate on X-axis
+                            rotationY = rotationY, // Rotate on Y-axis
+                            rotationZ = rotationZ  // Rotate on Z-axis (default for flat 2D rotation)
+                        )
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                Text(text = "Certificates", style = MaterialTheme.typography.headlineMedium)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                when {
+                    isLoading -> Text(text = "Loading...")
+                    errorMessage != null -> Text(text = errorMessage ?: "An unknown error occurred.")
+                    userData != null -> {
+                        if (userData?.vaccinationRecords.isNullOrEmpty()) {
+                            Text(text = "No certificates available.")
+                        } else {
+                            LazyColumn {
+                                items(userData!!.vaccinationRecords) { vac_rec_id ->
+                                    CertificateItem(
+                                        vac_rec_id = vac_rec_id,
+                                        onClick = {
+                                            certificateForQrView = vac_rec_id // Show QR code for this record
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
+                    else -> Text(text = "No data available.")
                 }
-                else -> Text(text = "No data available.")
             }
         }
     }
 }
 
 @Composable
-fun CertificateItem(certificate: String, isQrVisible: Boolean, onClick: () -> Unit) {
+fun CertificateItem(
+    vac_rec_id: String,
+    onClick: () -> Unit
+) {
+    var vaccineInfo by remember { mutableStateOf<String?>(null) }
+
+    // Fetch vaccine data when the certificate is clicked
+    LaunchedEffect(vac_rec_id) {
+        vaccineInfo = getInfo(vac_rec_id) // Fetch vaccine info asynchronously
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() } // Toggle certificate selection
+            .clickable { onClick() } // When clicked, show QR code
             .padding(vertical = 8.dp)
     ) {
-        Text(text = "View Certificate: $certificate")
-
-        // Show QR code only when the item is selected
-        if (isQrVisible) {
-            Spacer(modifier = Modifier.height(8.dp))
-            QRCodeView(
-                qrCodeData = certificate,
-                modifier = Modifier
-                    .fillMaxWidth(0.5f) // 50% width preview
-                    .aspectRatio(1f)
-                    .padding(top = 8.dp)
-                    .clickable { onClick() } // Clicking on the QR code will hide it
-            )
+        // Displaying the vaccine info
+        if (vaccineInfo != null) {
+            Text(text = "View Certificate: $vaccineInfo")
+        } else {
+            Text(text = "Loading certificate info...")
         }
     }
 }
+
+suspend fun getInfo(vac_rec_id: String): String? {
+    val db = FirebaseFirestore.getInstance()
+    val result = db.collection("vaccination_records")
+        .whereEqualTo("vaccinationRecordUid", vac_rec_id)
+        .get()
+        .await()
+
+    return result.documents.firstOrNull()?.getString("vaccineUid") ?: "Unknown vaccine"
+}
+
 
 @Composable
 fun QRCodeView(qrCodeData: String, modifier: Modifier = Modifier) {
@@ -495,7 +560,8 @@ fun QRCodeView(qrCodeData: String, modifier: Modifier = Modifier) {
             Image(
                 bitmap = it.asImageBitmap(),
                 contentDescription = "QR Code",
-                modifier = Modifier.size(200.dp)
+                modifier = Modifier
+                    .size(300.dp) // Adjust the size of the QR code
             )
         }
     }
@@ -519,6 +585,7 @@ fun generateQRCodeBitmap(data: String): Bitmap? {
         null
     }
 }
+
 
 
 
