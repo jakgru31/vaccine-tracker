@@ -29,8 +29,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.vaccinetracker.adapters.CertificateAdapter
-import com.example.vaccinetracker.collections.Certificate
 import com.example.vaccinetracker.collections.User
 import com.example.vaccinetracker.collections.Vaccine
 import com.example.vaccinetracker.data.UserRepository
@@ -302,7 +300,34 @@ fun VaccinesScreen(
                         errorMessage = "Failed to create appointment."
                         showErrorDialog = true
                     } else {
-                        println("Appointment created successfully")
+                        sendNotification(
+                            context,
+                            title = "Vaccination Appointment",
+                            message = "You have made an appointment for $selectedVaccine on ${selectedDate?.toDate()}"
+                        )
+
+                        val dayBefore = Calendar.getInstance().apply {
+                            time = selectedDate?.toDate() ?: return@apply
+                            add(Calendar.DAY_OF_YEAR, -1)
+                        }
+                        scheduleNotification(
+                            context,
+                            dayBefore.timeInMillis,
+                            title = "Vaccination Reminder",
+                            message = "Your appointment for $selectedVaccine is tomorrow."
+                        )
+
+
+                        //TODO: Move this somewhere - there will be possibility to view all appointments and click on them to add them to calendar
+                        addAppointmentToCalendar(
+                            context,
+                            title = "Vaccination",
+                            description = "Vaccination appointment for $selectedVaccine",
+                            startTime = selectedDate!!.toDate().time,
+                            endTime = selectedDate!!.toDate().time + 60 * 60 * 1000
+                        )
+
+
                     }
                 }
             }

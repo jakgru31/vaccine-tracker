@@ -2,6 +2,7 @@ package com.example.vaccinetracker.activities
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -68,6 +69,7 @@ fun LogInScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
     var logInStatus by remember { mutableStateOf("") }
+
 
     Column(
         modifier = Modifier
@@ -199,4 +201,6 @@ fun LogInScreenPreview() {
         }
     }
 }
+
+
 
