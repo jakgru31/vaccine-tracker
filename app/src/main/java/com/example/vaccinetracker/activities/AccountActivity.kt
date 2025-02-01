@@ -1,8 +1,11 @@
 package com.example.vaccinetracker.activities
 
+import android.app.TimePickerDialog
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -17,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -26,16 +30,21 @@ import androidx.navigation.compose.rememberNavController
 import com.example.vaccinetracker.adapters.CertificateAdapter
 import com.example.vaccinetracker.collections.Certificate
 import com.example.vaccinetracker.collections.User
+import com.example.vaccinetracker.collections.Vaccine
 import com.example.vaccinetracker.data.UserRepository
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import userMakesAppointment
 import userMakesVaccination
+import java.time.LocalDateTime
+import java.util.Calendar
+
 //import userMakesVaccination
 
 class AccountActivity : ComponentActivity() {
@@ -70,10 +79,7 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier) {
     val coroutineScope = rememberCoroutineScope()
     NavHost(navController = navController, startDestination = "home", modifier = modifier) {
         composable("home") { HomeScreen() }
-        composable("vaccines") { VaccinesScreen(coroutineScope = coroutineScope,
-            vaccineUid = "Pfizer",  // Example values – provide these from your parent composable
-            dateAdministered = "2024-07-26",
-            doseNumber = 1) }
+        composable("vaccines") { VaccinesScreen(coroutineScope = coroutineScope)}
         composable("certificates") { CertificatesScreen() }
     }
 }
@@ -184,16 +190,37 @@ fun HomeScreen() {
     }
 }
 
+
 @Composable
 fun VaccinesScreen(
-    coroutineScope: CoroutineScope, // Add CoroutineScope
-    vaccineUid: String, // Add vaccineUid, dateAdministered, and doseNumber as parameters
-    dateAdministered: String,
-    doseNumber: Int
+    coroutineScope: CoroutineScope
 ) {
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var selectedVaccine by remember { mutableStateOf<String?>(null) }
+    var selectedDate by remember { mutableStateOf<Timestamp?>(null) }
+    val vaccines = remember { mutableStateListOf<Vaccine>() }
+
+    val context = LocalContext.current
+
+    // Fetch vaccines from Firestore
+    LaunchedEffect(Unit) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("vaccine")
+            .get()
+            .addOnSuccessListener { result ->
+                vaccines.clear()
+                for (document in result) {
+                    val vaccine = document.toObject(Vaccine::class.java)
+                    vaccines.add(vaccine)
+                }
+            }
+            .addOnFailureListener { exception ->
+                errorMessage = "Error getting vaccines: $exception"
+                showErrorDialog = true
+            }
+    }
 
     Column(
         modifier = Modifier
@@ -202,38 +229,61 @@ fun VaccinesScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = {
-            userId?.let {
-                coroutineScope.launch {
-                    val success = userMakesVaccination(it, vaccineUid, dateAdministered, doseNumber)
-                    if (!success) {
-                        println("false")
-                    } else {
-                        // Handle success, e.g., show a success message, navigate to another screen
-                        println("Success")
-                    }
+        // Vaccine Dropdown
+        var expanded by remember { mutableStateOf(false) }
+        Box {
+            Button(onClick = { expanded = true }) {
+                Text(selectedVaccine ?: "Select Vaccine")
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                vaccines.forEach { vaccine ->
+                    DropdownMenuItem(
+                        text = { Text(vaccine.name) },
+                        onClick = {
+                            selectedVaccine = vaccine.name
+                            expanded = false
+                        }
+                    )
                 }
             }
-
-        }) {
-            Text("Make Vaccine")
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
 
+        // Date & Time Picker
         Button(onClick = {
-            userId?.let {
+            showDateTimePicker(context) { timestamp ->
+                selectedDate = timestamp
+            }
+        }) {
+            Text(selectedDate?.toDate().toString() ?: "Select Date & Time")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Make Appointment Button
+        Button(
+            onClick = {
+                if (userId == null || selectedVaccine == null || selectedDate == null) {
+                    errorMessage = "Please select a vaccine and date."
+                    showErrorDialog = true
+                    return@Button
+                }
+
                 coroutineScope.launch {
-                    val success = userMakesAppointment(it, vaccineUid, Timestamp.now())
+                    val success = userMakesAppointment(userId, selectedVaccine!!, selectedDate!!)
                     if (!success) {
-                        println("false")
+                        errorMessage = "Failed to create appointment."
+                        showErrorDialog = true
                     } else {
-                        // Handle success, e.g., show a success message, navigate to another screen
-                        println("Success")
+                        println("Appointment created successfully")
                     }
                 }
             }
-
-        }) {
+        ) {
             Text("Make Appointment")
         }
 
@@ -251,7 +301,46 @@ fun VaccinesScreen(
             )
         }
     }
-}@Composable
+}
+
+// Function to show Date and Time Picker
+
+fun showDateTimePicker(context: Context, onDateSelected: (Timestamp) -> Unit) {
+    val calendar = Calendar.getInstance()
+    val datePicker = android.app.DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            val timePicker = TimePickerDialog(
+                context,
+                { _, hourOfDay, minute ->
+                    val selectedCalendar = Calendar.getInstance().apply {
+                        set(year, month, dayOfMonth, hourOfDay, minute, 0)
+                    }
+                    if (selectedCalendar.timeInMillis > System.currentTimeMillis()) {
+                        onDateSelected(Timestamp(selectedCalendar.time))
+                    } else {
+                        Toast.makeText(context, "Select a future date.", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                true
+            )
+            timePicker.show()
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+    datePicker.datePicker.minDate = System.currentTimeMillis() // Ensure only future dates
+    datePicker.show()
+}
+
+
+
+
+
+@Composable
 fun CertificatesScreen() {
     val certificateAdapter = remember { CertificateAdapter() }
     val certificates = remember { mutableStateListOf<Certificate>() }
