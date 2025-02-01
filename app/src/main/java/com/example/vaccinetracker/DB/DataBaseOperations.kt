@@ -1,3 +1,4 @@
+import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.example.vaccinetracker.collections.Appointment
@@ -14,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import com.google.firebase.firestore.FieldPath
 
 //TODO Works
 suspend fun addNewUserToDatabase(user: User): Boolean { // Return success/failure
@@ -59,13 +61,29 @@ suspend fun addNewUserToDatabase(user: User): Boolean { // Return success/failur
 
 //TODO Works
 // A vaccination Record is created and stored as well as its id in the users vaccination records list
+
 suspend fun userMakesVaccination(userUid: String, vaccineUid: String, dateAdministered: String, doseNumber: Int): Boolean {
     val db = FirebaseFirestore.getInstance()
 
     println("userUid: $userUid, vaccineUid: $vaccineUid, dateAdministered: $dateAdministered, doseNumber: $doseNumber")
+
     return withContext(Dispatchers.IO) {
         try {
-            // Generate a new UID for the vaccination record
+            // Step 1: Check if the vaccineUid already exists for the user
+            val vaccinationRecords = db.collection("vaccination_records")
+                .whereEqualTo("userUid", userUid)
+                .whereEqualTo("vaccineUid", vaccineUid)
+                .get()
+                .await()
+
+            // If there's already a record with this vaccineUid for the user, return false
+            if (!vaccinationRecords.isEmpty) {
+                println("User has already received this vaccine.")
+                return@withContext false
+            }
+            else{println(vaccinationRecords.isEmpty)}
+
+            // Step 2: Generate a new UID for the vaccination record
             val vaccinationRecordUid = UUID.randomUUID().toString()
             val newVaccinationRecord = VaccinationRecord(
                 vaccinationRecordUid, userUid, vaccineUid, dateAdministered, doseNumber
@@ -74,6 +92,7 @@ suspend fun userMakesVaccination(userUid: String, vaccineUid: String, dateAdmini
             val userDocRef = db.collection("users").document(userUid)
             val vaccinationRecordRef = db.collection("vaccination_records").document(vaccinationRecordUid)
 
+            // Step 3: Run the Firestore transaction to add the vaccination record
             db.runTransaction { transaction ->
                 val userSnapshot = transaction.get(userDocRef)
 
@@ -103,6 +122,8 @@ suspend fun userMakesVaccination(userUid: String, vaccineUid: String, dateAdmini
     }
 }
 
+
+
 //TODO Works
 suspend fun userMakesAppointment(userId: String, vaccineId: String, appointmentDate: Timestamp): Boolean {
     val db = FirebaseFirestore.getInstance()
@@ -111,6 +132,20 @@ suspend fun userMakesAppointment(userId: String, vaccineId: String, appointmentD
 
     return withContext(Dispatchers.IO) {
         try {
+
+            val appointments = db.collection("appointments")
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("vaccineId", vaccineId)
+                .get()
+                .await()
+
+            // If there's already a record with this vaccineUid for the user, return false
+            if (!appointments.isEmpty) {
+                println("User has already received this vaccine.")
+                return@withContext false
+            }
+            else{println(appointments.isEmpty)}
+
             db.collection("appointments").document(appointmentId).set(appointment).await()
             println("Appointment added successfully")
             true
