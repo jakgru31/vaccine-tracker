@@ -58,10 +58,6 @@ class LoginActivity: ComponentActivity() {
     }
 }
 
-private fun showErrorSnackBar(message: String, isError: Boolean) {
-    // TODO: Show error snackbar
-}
-
 @Composable
 fun LogInScreen(
     onSignUpClick: () -> Unit,
