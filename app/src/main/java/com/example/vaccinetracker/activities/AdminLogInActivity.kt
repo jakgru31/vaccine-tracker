@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.auth.FirebaseAuth
 import android.util.Patterns
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.platform.LocalContext
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
@@ -138,12 +140,30 @@ fun AdminLogInScreen(
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFFD700),
+                containerColor = Color(0xFF007BFF),
                 contentColor = Color.Black
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Log In")
+        }
+
+        Spacer(modifier = Modifier.padding(200.dp))
+
+        val context = LocalContext.current
+
+        Button(
+            onClick = {
+                val intent = Intent(context, LoginActivity::class.java)
+                context.startActivity(intent)
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF007BFF),
+                contentColor = Color.White
+            ),
+            modifier = Modifier.focusGroup()
+        ) {
+            Text("I am user")
         }
 
         Spacer(modifier = Modifier.padding(8.dp))

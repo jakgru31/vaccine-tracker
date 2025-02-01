@@ -1,6 +1,8 @@
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.graphics.Color
 import com.example.vaccinetracker.collections.Appointment
 import com.example.vaccinetracker.collections.User
 import com.example.vaccinetracker.collections.VaccinationRecord
@@ -16,6 +18,8 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import com.google.firebase.firestore.FieldPath
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.MultiFormatWriter
 
 //TODO Works
 suspend fun addNewUserToDatabase(user: User): Boolean { // Return success/failure
@@ -174,6 +178,42 @@ fun deleteAppointment(docId: String) {
         }
 }
 
+suspend fun loadAppointments(): List<Appointment> {
+    val db = FirebaseFirestore.getInstance()
+    return try {
+        val snapshot = db.collection("appointments").get().await()
+        val appointments = snapshot.documents.mapNotNull { it.toObject(Appointment::class.java) }
+
+        // Log retrieved data
+        println("Appointments fetched: ${appointments.size}")
+        appointments.forEach { println("Appointment: $it") }
+
+        appointments
+    } catch (e: Exception) {
+        e.printStackTrace()
+        println("Error fetching appointments: ${e.message}")
+        emptyList()
+    }
+}
+
+/*fun generateQRCodeBitmap(data: String): Bitmap? {
+    return try {
+        val size = 512
+        val bitMatrix = MultiFormatWriter().encode(data, BarcodeFormat.QR_CODE, size, size)
+        val width = bitMatrix.width
+        val height = bitMatrix.height
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+            }
+        }
+        bitmap
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}*/
 
 // Suspend function to load appointments from Firestore
 /*suspend fun loadAppointments(): SnapshotStateList<Appointment> {

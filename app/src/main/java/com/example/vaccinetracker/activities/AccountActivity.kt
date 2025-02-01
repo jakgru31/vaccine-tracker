@@ -4,12 +4,15 @@ import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Color
+//import android.graphics.Color
+import androidx.compose.ui.graphics.Color
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -44,6 +47,10 @@ import userMakesAppointment
 import userMakesVaccination
 import java.time.LocalDateTime
 import java.util.Calendar
+//import androidx.compose.ui.graphics.Color // Add this import
+import android.graphics.Color as AndroidColor
+import androidx.compose.ui.graphics.Color as ComposeColor
+// Ensure this import is present
 
 //import userMakesVaccination
 
@@ -388,6 +395,8 @@ fun showDateTimePicker(context: Context, onDateSelected: (Timestamp) -> Unit) {
 
 
 
+
+
 @Composable
 fun CertificatesScreen() {
     val userRepository = remember { UserRepository() }
@@ -395,7 +404,7 @@ fun CertificatesScreen() {
     var userData by remember { mutableStateOf<User?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var selectedCertificate by remember { mutableStateOf<String?>(null) }
+    var selectedCertificate by remember { mutableStateOf<String?>(null) } // Keeps track of the selected certificate
 
     LaunchedEffect(currentUser?.uid) {
         currentUser?.uid?.let { userId ->
@@ -415,52 +424,72 @@ fun CertificatesScreen() {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(text = "Certificates", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(text = "Certificates", style = MaterialTheme.typography.headlineMedium)
+            Spacer(modifier = Modifier.height(16.dp))
 
-        when {
-            isLoading -> Text(text = "Loading...")
-            errorMessage != null -> Text(text = errorMessage ?: "An unknown error occurred.")
-            userData != null -> {
-                if (userData?.vaccinationRecords.isNullOrEmpty()) {
-                    Text(text = "No certificates available.")
-                } else {
-                    LazyColumn {
-                        items(userData!!.vaccinationRecords) { certificate ->
-                            Button(
-                                onClick = {
-                                    selectedCertificate = certificate
-
-                                },
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            ) {
-                                Text(text = "View Certificate: ${certificate}")
+            when {
+                isLoading -> Text(text = "Loading...")
+                errorMessage != null -> Text(text = errorMessage ?: "An unknown error occurred.")
+                userData != null -> {
+                    if (userData?.vaccinationRecords.isNullOrEmpty()) {
+                        Text(text = "No certificates available.")
+                    } else {
+                        LazyColumn {
+                            items(userData!!.vaccinationRecords) { certificate ->
+                                CertificateItem(
+                                    certificate = certificate,
+                                    isQrVisible = selectedCertificate == certificate, // Show QR code only if selected
+                                    onClick = {
+                                        selectedCertificate = if (selectedCertificate == certificate) null else certificate // Toggle the certificate visibility
+                                    }
+                                )
                             }
                         }
                     }
                 }
+                else -> Text(text = "No data available.")
             }
-            else -> Text(text = "No data available.")
-        }
-
-        selectedCertificate?.let { certificate ->
-            Spacer(modifier = Modifier.height(16.dp))
-            QRCodeView(certificate)
         }
     }
 }
 
 @Composable
-fun QRCodeView(qrCodeData: String) {
+fun CertificateItem(certificate: String, isQrVisible: Boolean, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() } // Toggle certificate selection
+            .padding(vertical = 8.dp)
+    ) {
+        Text(text = "View Certificate: $certificate")
+
+        // Show QR code only when the item is selected
+        if (isQrVisible) {
+            Spacer(modifier = Modifier.height(8.dp))
+            QRCodeView(
+                qrCodeData = certificate,
+                modifier = Modifier
+                    .fillMaxWidth(0.5f) // 50% width preview
+                    .aspectRatio(1f)
+                    .padding(top = 8.dp)
+                    .clickable { onClick() } // Clicking on the QR code will hide it
+            )
+        }
+    }
+}
+
+@Composable
+fun QRCodeView(qrCodeData: String, modifier: Modifier = Modifier) {
     val qrBitmap = remember { generateQRCodeBitmap(qrCodeData) }
     qrBitmap?.let {
         Box(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = modifier,
             contentAlignment = Alignment.Center
         ) {
             Image(
@@ -472,7 +501,6 @@ fun QRCodeView(qrCodeData: String) {
     }
 }
 
-
 fun generateQRCodeBitmap(data: String): Bitmap? {
     return try {
         val size = 512
@@ -482,7 +510,7 @@ fun generateQRCodeBitmap(data: String): Bitmap? {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
         for (x in 0 until width) {
             for (y in 0 until height) {
-                bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+                bitmap.setPixel(x, y, if (bitMatrix[x, y]) AndroidColor.BLACK else AndroidColor.WHITE)
             }
         }
         bitmap
@@ -491,6 +519,8 @@ fun generateQRCodeBitmap(data: String): Bitmap? {
         null
     }
 }
+
+
 
 fun Int.ordinalSuffix(): String {
     return when (this % 10) {

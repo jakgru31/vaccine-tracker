@@ -2,33 +2,19 @@ package com.example.vaccinetracker.activities
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -37,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
 import com.google.firebase.auth.FirebaseAuth
 
-class LoginActivity: ComponentActivity() {
+class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -51,7 +37,6 @@ class LoginActivity: ComponentActivity() {
                     onSignInSuccess = {
                         val intent = Intent(this, AccountActivity::class.java)
                         startActivity(intent)
-
                     }
                 )
             }
@@ -64,12 +49,12 @@ fun LogInScreen(
     onSignUpClick: () -> Unit,
     onSignInSuccess: () -> Unit
 ) {
+    val context = LocalContext.current
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
     var logInStatus by remember { mutableStateOf("") }
-
 
     Column(
         modifier = Modifier
@@ -158,12 +143,28 @@ fun LogInScreen(
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF007BFF),
+                containerColor = Color(0xFFE0B400),
                 contentColor = Color.White
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Forgot Password")
+        }
+
+        Spacer(modifier = Modifier.padding(200.dp))
+
+        Button(
+            onClick = {
+                val intent = Intent(context, AdminLogInActivity::class.java)
+                context.startActivity(intent)
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFE0B400),
+                contentColor = Color.White
+            ),
+            modifier = Modifier.focusGroup()
+        ) {
+            Text("I am admin")
         }
 
         errorMessage?.let {
@@ -201,6 +202,3 @@ fun LogInScreenPreview() {
         }
     }
 }
-
-
-

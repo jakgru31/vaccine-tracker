@@ -1,6 +1,7 @@
 package com.example.vaccinetracker.activities
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,18 +11,23 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.vaccinetracker.collections.Appointment
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.type.DateTime
 import deleteAppointment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import loadAppointments
 import userMakesVaccination
 import java.time.Instant
 import java.time.LocalDateTime
@@ -53,15 +59,20 @@ fun AdminMainScreen() {
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Admin Panel") }) }
+        topBar = {
+            TopAppBar(
+                title = { Text("Admin Panel") },
+                actions = {
+                    LogoutButtonForAdmin()  // Добавили кнопку выхода здесь
+                }
+            )
+        }
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding).fillMaxSize()) {
             items(appointments) { appointment ->
                 val appointmentDate = appointment.getLocalDateTime()
 
                 if (appointmentDate.isBefore(LocalDateTime.now())) {
-                    hello()
-                }
 
                 val isVisible = visibilityMap[appointment.appointmentId] ?: true
 
@@ -73,8 +84,12 @@ fun AdminMainScreen() {
                         appointment,
                         onConfirm = {
                             coroutineScope.launch {
-                                // Calling the suspend function inside the coroutine
-                                val success = userMakesVaccination(appointment.userId, appointment.vaccineId, appointment.getLocalDateTime().toString(), 1)
+                                val success = userMakesVaccination(
+                                    appointment.userId,
+                                    appointment.vaccineId,
+                                    appointment.getLocalDateTime().toString(),
+                                    1
+                                )
                                 if (success) {
                                     deleteAppointment(appointment.appointmentId)
                                     visibilityMap[appointment.appointmentId] = false
@@ -93,8 +108,26 @@ fun AdminMainScreen() {
                         }
                     )
                 }
-            }
+            }}
         }
+    }
+}
+
+@Composable
+fun LogoutButtonForAdmin() {
+    val context = LocalContext.current
+
+    IconButton(onClick = {
+        FirebaseAuth.getInstance().signOut()
+        val intent = Intent(context, AdminLogInActivity::class.java)
+        context.startActivity(intent)
+
+        // Optionally, finish the current activity to prevent back navigation
+        if (context is AccountActivity) {
+            context.finish()
+        }
+    }) {
+        Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
     }
 }
 
@@ -142,23 +175,7 @@ fun reject(appointment: Appointment) {
 }
 
 // Function to generate random appointments
-suspend fun loadAppointments(): List<Appointment> {
-    val db = FirebaseFirestore.getInstance()
-    return try {
-        val snapshot = db.collection("appointments").get().await()
-        val appointments = snapshot.documents.mapNotNull { it.toObject(Appointment::class.java) }
 
-        // Log retrieved data
-        println("Appointments fetched: ${appointments.size}")
-        appointments.forEach { println("Appointment: $it") }
-
-        appointments
-    } catch (e: Exception) {
-        e.printStackTrace()
-        println("Error fetching appointments: ${e.message}")
-        emptyList()
-    }
-}
 
 /*// Helper function to generate random DateTime objects
 @SuppressLint("NewApi")
