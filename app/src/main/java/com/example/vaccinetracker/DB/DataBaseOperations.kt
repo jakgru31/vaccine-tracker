@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 import com.example.vaccinetracker.collections.Appointment
 import com.example.vaccinetracker.collections.User
 import com.example.vaccinetracker.collections.VaccinationRecord
+import com.example.vaccinetracker.collections.Vaccine
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
@@ -143,8 +144,14 @@ suspend fun userMakesAppointment(userId: String, vaccineId: String, appointmentD
                 .get()
                 .await()
 
+            val records = db.collection("vaccination_records")
+                .whereEqualTo("userUid", userId)
+                .whereEqualTo("vaccineUd", vaccineId)
+                .get()
+                .await()
+
             // If there's already a record with this vaccineUid for the user, return false
-            if (!appointments.isEmpty) {
+            if (!appointments.isEmpty || !records.isEmpty) {
                 println("User has already received this vaccine.")
                 return@withContext false
             }
@@ -193,6 +200,57 @@ suspend fun loadAppointments(): List<Appointment> {
         e.printStackTrace()
         println("Error fetching appointments: ${e.message}")
         emptyList()
+    }
+}
+
+
+
+fun addVaccinesToFirestore() {
+
+    val vaccinesList = listOf(
+        Vaccine(vaccineId = "1", name = "COVID-19 Vaccine", manufacturer = "Pfizer", type = "mRNA", dosesRequired = 2, recommendedInterval = 21, commonSideEffects = listOf("Fatigue", "Headache", "Pain at injection site")),
+        Vaccine(vaccineId = "2", name = "Influenza Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Soreness at injection site", "Mild fever", "Headache")),
+        Vaccine(vaccineId = "3", name = "Hepatitis B Vaccine", manufacturer = "Merck", type = "Inactivated", dosesRequired = 3, recommendedInterval = 30, commonSideEffects = listOf("Soreness at injection site", "Fatigue", "Headache")),
+        Vaccine(vaccineId = "4", name = "Measles, Mumps, Rubella Vaccine (MMR)", manufacturer = "Merck", type = "Live", dosesRequired = 2, recommendedInterval = 28, commonSideEffects = listOf("Fever", "Rash", "Soreness")),
+        Vaccine(vaccineId = "5", name = "Polio Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 4, recommendedInterval = 60, commonSideEffects = listOf("Pain at injection site", "Fever")),
+        Vaccine(vaccineId = "6", name = "Human Papillomavirus (HPV) Vaccine", manufacturer = "Merck", type = "Inactivated", dosesRequired = 3, recommendedInterval = 180, commonSideEffects = listOf("Soreness at injection site", "Fever")),
+        Vaccine(vaccineId = "7", name = "Diphtheria, Tetanus, and Pertussis Vaccine (DTaP)", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 5, recommendedInterval = 60, commonSideEffects = listOf("Soreness", "Swelling", "Fever")),
+        Vaccine(vaccineId = "8", name = "Hepatitis A Vaccine", manufacturer = "Merck", type = "Inactivated", dosesRequired = 2, recommendedInterval = 180, commonSideEffects = listOf("Soreness at injection site", "Headache", "Fatigue")),
+        Vaccine(vaccineId = "9", name = "Rotavirus Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 3, recommendedInterval = 60, commonSideEffects = listOf("Fever", "Diarrhea", "Vomiting")),
+        Vaccine(vaccineId = "10", name = "Varicella (Chickenpox) Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 2, recommendedInterval = 28, commonSideEffects = listOf("Rash", "Fever", "Tiredness")),
+        Vaccine(vaccineId = "11", name = "Pneumococcal Vaccine", manufacturer = "Pfizer", type = "Inactivated", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Redness at injection site", "Fever")),
+        Vaccine(vaccineId = "12", name = "Meningococcal Vaccine", manufacturer = "Sanofi Pasteur", type = "Conjugate", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Soreness at injection site", "Fever")),
+        Vaccine(vaccineId = "13", name = "Shingles Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Pain at injection site", "Headache", "Fever")),
+        Vaccine(vaccineId = "14", name = "Yellow Fever Vaccine", manufacturer = "Sanofi Pasteur", type = "Live", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Soreness at injection site", "Fever")),
+        Vaccine(vaccineId = "15", name = "Typhoid Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Soreness", "Fatigue", "Headache")),
+        Vaccine(vaccineId = "16", name = "Bacillus Calmette-Guérin (BCG) Vaccine", manufacturer = "Sanofi Pasteur", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Pain at injection site", "Fever")),
+        Vaccine(vaccineId = "17", name = "Dengue Vaccine", manufacturer = "Sanofi Pasteur", type = "Live", dosesRequired = 3, recommendedInterval = 180, commonSideEffects = listOf("Pain at injection site", "Headache", "Fatigue")),
+        Vaccine(vaccineId = "18", name = "Cholera Vaccine", manufacturer = "Euvichol", type = "Inactivated", dosesRequired = 2, recommendedInterval = 30, commonSideEffects = listOf("Diarrhea", "Fever")),
+        Vaccine(vaccineId = "19", name = "Zoster Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Soreness", "Redness")),
+        Vaccine(vaccineId = "20", name = "Smallpox Vaccine", manufacturer = "Bavarian Nordic", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Fever", "Rash")),
+        Vaccine(vaccineId = "21", name = "COVID-19 Vaccine", manufacturer = "Moderna", type = "mRNA", dosesRequired = 2, recommendedInterval = 28, commonSideEffects = listOf("Fatigue", "Headache", "Pain at injection site")),
+        Vaccine(vaccineId = "22", name = "Hepatitis C Vaccine", manufacturer = "Gilead Sciences", type = "Inactivated", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Fatigue", "Soreness")),
+        Vaccine(vaccineId = "23", name = "Ebola Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 2, recommendedInterval = 0, commonSideEffects = listOf("Fever", "Headache")),
+        Vaccine(vaccineId = "24", name = "HIV Vaccine", manufacturer = "Various", type = "Inactivated", dosesRequired = 3, recommendedInterval = 180, commonSideEffects = listOf("Pain", "Swelling")),
+        Vaccine(vaccineId = "25", name = "Rabies Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 5, recommendedInterval = 0, commonSideEffects = listOf("Pain at injection site", "Headache", "Fever")),
+        Vaccine(vaccineId = "26", name = "Cervical Cancer Vaccine", manufacturer = "Merck", type = "Inactivated", dosesRequired = 3, recommendedInterval = 180, commonSideEffects = listOf("Soreness at injection site", "Headache", "Dizziness")),
+        Vaccine(vaccineId = "27", name = "Mumps Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Soreness", "Fever")),
+        Vaccine(vaccineId = "28", name = "Rubella Vaccine", manufacturer = "Merck", type = "Live", dosesRequired = 1, recommendedInterval = 0, commonSideEffects = listOf("Rash", "Fever", "Soreness")),
+        Vaccine(vaccineId = "29", name = "Typhus Vaccine", manufacturer = "Sanofi Pasteur", type = "Inactivated", dosesRequired = 1, recommendedInterval = 365, commonSideEffects = listOf("Soreness", "Headache")),
+        Vaccine(vaccineId = "30", name = "Polio Vaccine (Oral)", manufacturer = "Sanofi Pasteur", type = "Live", dosesRequired = 4, recommendedInterval = 60, commonSideEffects = listOf("Mild fever", "Fatigue"))
+    )
+
+    val db = FirebaseFirestore.getInstance()
+    val vaccinesCollection = db.collection("vaccine")
+
+    vaccinesList.forEach { vaccine ->
+        vaccinesCollection.document(vaccine.vaccineId).set(vaccine)
+            .addOnSuccessListener {
+                println("Successfully added vaccine: ${vaccine.name}")
+            }
+            .addOnFailureListener { e ->
+                println("Error adding vaccine: ${e.message}")
+            }
     }
 }
 

@@ -1,5 +1,6 @@
 package com.example.vaccinetracker.activities
 
+import addVaccinesToFirestore
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
@@ -96,6 +97,7 @@ fun LogInScreen(
                     FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
+                                addVaccinesToFirestore()
                                 logInStatus = "Hello there"
                                 onSignInSuccess()
                             } else {

@@ -14,10 +14,13 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ExitToApp
@@ -30,6 +33,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -51,11 +55,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import userMakesAppointment
 import userMakesVaccination
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.util.Calendar
 //import androidx.compose.ui.graphics.Color // Add this import
 import android.graphics.Color as AndroidColor
 import androidx.compose.ui.graphics.Color as ComposeColor
+import java.util.*
 // Ensure this import is present
 
 //import userMakesVaccination
@@ -225,6 +231,8 @@ fun LogoutButton() {
     }
 }
 
+
+
 @Composable
 fun VaccinesScreen(
     coroutineScope: CoroutineScope
@@ -234,7 +242,8 @@ fun VaccinesScreen(
     var errorMessage by remember { mutableStateOf("") }
     var selectedVaccine by remember { mutableStateOf<String?>(null) }
     var selectedDate by remember { mutableStateOf<Timestamp?>(null) }
-    val vaccines = remember { mutableStateListOf<Vaccine>() }
+    var vaccines = remember { mutableStateListOf<Vaccine>() }
+    var showVaccineMenu by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -259,41 +268,70 @@ fun VaccinesScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()), // Ensuring the content is scrollable
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Title
+        Text(
+            text = "Schedule Your Vaccination",
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+
         // Vaccine Dropdown
-        var expanded by remember { mutableStateOf(false) }
-        Box {
-            Button(onClick = { expanded = true }) {
-                Text(selectedVaccine ?: "Select Vaccine")
-            }
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = { showVaccineMenu = !showVaccineMenu },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color(0xFF6200EE),
+                    contentColor = Color.White
+                )
             ) {
-                vaccines.forEach { vaccine ->
-                    DropdownMenuItem(
-                        text = { Text(vaccine.name) },
-                        onClick = {
-                            selectedVaccine = vaccine.name
-                            expanded = false
-                        }
-                    )
+                Text(text = selectedVaccine ?: "Click to Choose Vaccine")
+            }
+
+            if (showVaccineMenu) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White)
+                        .border(1.dp, Color.Gray)
+                        .padding(8.dp)
+                ) {
+                    vaccines.forEach { vaccine ->
+                        Text(
+                            text = vaccine.name,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedVaccine = vaccine.name
+                                    showVaccineMenu = false
+                                }
+                                .padding(8.dp),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Date & Time Picker
+        // Date & Time Picker Button
         Button(onClick = {
             showDateTimePicker(context) { timestamp ->
                 selectedDate = timestamp
             }
         }) {
-            Text(selectedDate?.toDate().toString() ?: "Select Date & Time")
+            Text(
+                text = selectedDate?.toDate()?.let {
+                    // Format the date to a readable format
+                    SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(it)
+                } ?: "Click to Choose Date for Appointment"
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -310,49 +348,25 @@ fun VaccinesScreen(
                 coroutineScope.launch {
                     val success = userMakesAppointment(userId, selectedVaccine!!, selectedDate!!)
                     if (!success) {
-                        errorMessage = "Failed to create appointment."
+                        errorMessage = "You already have this vaccine or an existing appointment."
                         showErrorDialog = true
                     } else {
-                        sendNotification(
-                            context,
-                            title = "Vaccination Appointment",
-                            message = "You have made an appointment for $selectedVaccine on ${selectedDate?.toDate()}"
-                        )
-
-                        val dayBefore = Calendar.getInstance().apply {
-                            time = selectedDate?.toDate() ?: return@apply
-                            add(Calendar.DAY_OF_YEAR, -1)
-                        }
-                        scheduleNotification(
-                            context,
-                            dayBefore.timeInMillis,
-                            title = "Vaccination Reminder",
-                            message = "Your appointment for $selectedVaccine is tomorrow."
-                        )
-
-
-                        //TODO: Move this somewhere - there will be possibility to view all appointments and click on them to add them to calendar
-                        addAppointmentToCalendar(
-                            context,
-                            title = "Vaccination",
-                            description = "Vaccination appointment for $selectedVaccine",
-                            startTime = selectedDate!!.toDate().time,
-                            endTime = selectedDate!!.toDate().time + 60 * 60 * 1000
-                        )
-
-
+                        errorMessage = "You have successfully booked an appointment for $selectedVaccine on ${selectedDate?.toDate()}."
+                        showErrorDialog = true
                     }
                 }
-            }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(Color(0xFF6200EE))
         ) {
-            Text("Make Appointment")
+            Text("Make Appointment", color = Color.White)
         }
 
         // Error Dialog
         if (showErrorDialog) {
             AlertDialog(
                 onDismissRequest = { showErrorDialog = false },
-                title = { Text("Error") },
+                title = { Text("Status") },
                 text = { Text(errorMessage) },
                 confirmButton = {
                     Button(onClick = { showErrorDialog = false }) {
@@ -365,7 +379,6 @@ fun VaccinesScreen(
 }
 
 // Function to show Date and Time Picker
-
 fun showDateTimePicker(context: Context, onDateSelected: (Timestamp) -> Unit) {
     val calendar = Calendar.getInstance()
     val datePicker = android.app.DatePickerDialog(
@@ -396,6 +409,11 @@ fun showDateTimePicker(context: Context, onDateSelected: (Timestamp) -> Unit) {
     datePicker.datePicker.minDate = System.currentTimeMillis() // Ensure only future dates
     datePicker.show()
 }
+
+
+
+
+
 
 
 
