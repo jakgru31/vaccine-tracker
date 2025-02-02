@@ -122,7 +122,7 @@ fun MainScreen() {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(text = "Vaccine Tracker (Version 0.1)") },
+                    title = { Text(text = "Vaccine Tracker (Version 0.8)") },
                     actions = {
                         IconButton(
                             onClick = { coroutineScope.launch { drawerState.open() } } // Open drawer when clicked
