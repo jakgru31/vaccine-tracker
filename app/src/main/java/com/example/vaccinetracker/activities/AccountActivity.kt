@@ -599,6 +599,8 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
                         sendNotification(context, "Appointment Scheduled", "You  scheduled an appointment for ${selectedDate!!.toDate()} for $selectedVaccine vaccination.")
                         val notificationTime = selectedDate!!.toDate().time -  24 * 60 * 60 * 1000 // 24 hours before appointment
                         scheduleNotification(context, notificationTime, "Reminder", "Your appointment for $selectedVaccine is tomorrow.")
+                        errorMessage = "Appointment scheduled successfully."
+                        showErrorDialog = true
                     } else {
                         errorMessage = "Failed to schedule appointment."
                         showErrorDialog = true
