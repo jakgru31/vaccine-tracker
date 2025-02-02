@@ -1,6 +1,7 @@
 package com.example.vaccinetracker.activities
 
 import addVaccinesToFirestore
+import android.annotation.SuppressLint
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
@@ -68,13 +69,17 @@ import androidx.compose.ui.graphics.Color as ComposeColor
 import java.util.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.unit.sp
+import com.example.vaccinetracker.collections.Appointment
+import loadAppointmentsForOneUser
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
@@ -168,69 +173,113 @@ fun HomeScreen() {
     val userRepository = remember { UserRepository() }
     val currentUser = FirebaseAuth.getInstance().currentUser
     var userData by remember { mutableStateOf<User?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoadingUser by remember { mutableStateOf(true) }
+    var userErrorMessage by remember { mutableStateOf<String?>(null) }
 
+    var appointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
+    var isLoadingAppointments by remember { mutableStateOf(true) }
+    var appointmentErrorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Load user data
     LaunchedEffect(currentUser?.uid) {
         currentUser?.uid?.let { userId ->
-            isLoading = true
-            errorMessage = null
+            isLoadingUser = true
+            userErrorMessage = null
             userRepository.fetchUserData(userId) { fetchedUser ->
                 if (fetchedUser != null) {
                     userData = fetchedUser
                 } else {
-                    errorMessage = "Failed to fetch user data."
+                    userErrorMessage = "Failed to fetch user data."
                 }
-                isLoading = false
+                isLoadingUser = false
             }
         } ?: run {
-            errorMessage = "No user logged in."
-            isLoading = false
+            userErrorMessage = "No user logged in."
+            isLoadingUser = false
+        }
+    }
+
+    // Load appointments
+    LaunchedEffect(currentUser?.uid) {
+        currentUser?.uid?.let { userId ->
+            isLoadingAppointments = true
+            appointmentErrorMessage = null
+            try {
+                appointments = loadAppointmentsForOneUser(userId)
+            } catch (e: Exception) {
+                appointmentErrorMessage = "Failed to load appointments: ${e.message}"
+            } finally {
+                isLoadingAppointments = false
+            }
         }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start
+            .padding(16.dp)
     ) {
-        Text(text = "Home", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
+        // Header Section
+        Text(
+            text = "Hello, ${userData?.name ?: "User"}!",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
-        // Add logout button here
-        LogoutButton()
+        // Calendar Section
+        CalendarWidget(/*modifier = Modifier.weight(1f)*/)
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Reminders Section
+        Text(
+            text = "Reminders",
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
 
         when {
-            isLoading -> Text(text = "Loading...")
-            errorMessage != null -> Text(text = errorMessage ?: "An unknown error occurred.")
-            userData != null -> {
-                Text(text = "Welcome, ${userData?.name ?: "User"}")
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "Email: ${userData?.email ?: "Not available"}")
-                Text(text = "Surname: ${userData?.surname ?: "Not available"}")
-                Text(text = "Gender: ${userData?.gender ?: "Not available"}")
-                Text(text = "Date of Birth: ${userData?.dateOfBirth ?: "Not available"}")
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(text = "Certificates:")
-                if (userData?.vaccinationRecords.isNullOrEmpty()) {
-                    Text(text = "No certificates available.")
-                } else {
-                    userData?.vaccinationRecords?.forEach { certificate ->
-                        Text(text = "- ${certificate}")
-                    }
+            isLoadingAppointments -> Text(text = "Loading appointments...")
+            appointmentErrorMessage != null -> Text(text = appointmentErrorMessage!!)
+            appointments.isEmpty() -> Text(text = "No appointments found.")
+            else -> {
+                appointments.forEach { appointment ->
+                    ReminderItem(
+                        title = appointment.vaccineId,
+                        date = appointment.appointmentDate
+                    )
                 }
             }
-            else -> Text(text = "No data available.")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        CalendarWidget()
+        // Footer with Logout Button
+        LogoutButton()
+    }
+}
+
+@Composable
+fun ReminderItem(title: String, date: Timestamp) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .background(Color(0xFFF9F9F9), shape = RoundedCornerShape(8.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.DateRange,
+            contentDescription = "Reminder",
+            modifier = Modifier.size(40.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column {
+            Text(text = title, style = MaterialTheme.typography.bodyLarge)
+            Text(text = date.toString(), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        }
     }
 }
 
@@ -251,6 +300,7 @@ fun LogoutButton() {
         Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
     }
 }
+@SuppressLint("NewApi")
 @Composable
 fun CalendarWidget() {
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }

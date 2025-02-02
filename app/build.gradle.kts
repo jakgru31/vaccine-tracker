@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.accessibility.test.framework)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.androidx.foundation.android)
 
     // Test dependencies
     testImplementation(libs.junit)

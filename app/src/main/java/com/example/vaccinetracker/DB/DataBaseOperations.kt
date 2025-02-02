@@ -261,64 +261,23 @@ fun addVaccinesToFirestore() {
     }
 }
 
-/*fun generateQRCodeBitmap(data: String): Bitmap? {
+
+suspend fun loadAppointmentsForOneUser(userId: String): List<Appointment> {
+    val db = FirebaseFirestore.getInstance()
     return try {
-        val size = 512
-        val bitMatrix = MultiFormatWriter().encode(data, BarcodeFormat.QR_CODE, size, size)
-        val width = bitMatrix.width
-        val height = bitMatrix.height
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-        for (x in 0 until width) {
-            for (y in 0 until height) {
-                bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
-            }
-        }
-        bitmap
+        // Query the "appointments" collection with the specified userId
+        val snapshot = db.collection("appointments")
+            .whereEqualTo("userId", userId)
+            .get()
+            .await()
+
+        // Map the documents to Appointment objects
+        snapshot.documents.mapNotNull { it.toObject(Appointment::class.java) }
     } catch (e: Exception) {
         e.printStackTrace()
-        null
-    }
-}*/
-
-// Suspend function to load appointments from Firestore
-/*suspend fun loadAppointments(): SnapshotStateList<Appointment> {
-    val db = FirebaseFirestore.getInstance()
-    val collectionRef = db.collection("appointments")
-
-    val appointments = mutableStateListOf<Appointment>() // Use mutableStateListOf()
-
-    try {
-        val querySnapshot = collectionRef.get().await()  // Await Firestore query
-        for (document in querySnapshot.documents) {
-            val appointment = document.toObject(Appointment::class.java)
-            appointment?.let { appointments.add(it) }
-        }
-        println("Appointments loaded: ${appointments.size}")
-    } catch (exception: Exception) {
-        println("Error getting documents: $exception")
-    }
-
-    return appointments
-}*/
-
-
-/*
-suspend fun fetchUserData(userId: String): User? {
-    val db = FirebaseFirestore.getInstance()
-    return try {
-        println("Attempting to fetch user data")
-        val document = db.collection("users").document(userId).get().await()
-        if (!document.exists()) {
-            println("Document not found")
-            return null
-        }
-        document.toObject(User::class.java)?.also {
-            println("User data fetched successfully")
-        }
-    } catch (e: Exception) {
-        println("Error fetching user data: $e")
-        null
+        println("Error fetching appointments: ${e.message}")
+        emptyList()
     }
 }
-*/
+
 

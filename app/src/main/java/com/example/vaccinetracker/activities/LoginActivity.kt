@@ -221,11 +221,6 @@ fun LogInScreen(
             Text("I am admin", fontSize = 16.sp, fontWeight = FontWeight.Medium)
         }
 
-        errorMessage?.let {
-            Spacer(modifier = Modifier.padding(8.dp))
-            Text(text = it, color = Color.Red)
-        }
-
         LaunchedEffect(errorMessage, successMessage) {
             if (errorMessage != null || successMessage != null) {
                 delay(7000) // Keep message visible for 7 seconds
