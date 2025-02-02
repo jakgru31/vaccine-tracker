@@ -113,6 +113,7 @@ fun MainScreen() {
             ModalDrawerSheet(
                 modifier = Modifier
                     .width(LocalConfiguration.current.screenWidthDp.dp * 0.9f)
+                    .verticalScroll(rememberScrollState()),
 
             ) {
                 SettingsScreen()
