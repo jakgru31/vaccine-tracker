@@ -70,6 +70,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.geometry.Offset
@@ -197,6 +198,7 @@ sealed class BottomNavItem(val route: String, val title: String) {
     object Certificates : BottomNavItem("certificates", "Certificates")
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen() {
     val userRepository = remember { UserRepository() }
@@ -208,6 +210,8 @@ fun HomeScreen() {
     var appointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
     var isLoadingAppointments by remember { mutableStateOf(true) }
     var appointmentErrorMessage by remember { mutableStateOf<String?>(null) }
+
+    val context = LocalContext.current
 
     // Load user data
     LaunchedEffect(currentUser?.uid) {
@@ -243,48 +247,67 @@ fun HomeScreen() {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Header Section
-        Text(
-            text = "Hello, ${userData?.name ?: "User"}!",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Welcome Back!") },
+                actions = {
+                    IconButton(onClick = {
+                        FirebaseAuth.getInstance().signOut()
+                        val intent = Intent(context, LoginActivity::class.java)
+                        context.startActivity(intent)
 
-        // Calendar Section
-        CalendarWidget(/*modifier = Modifier.weight(1f)*/)
+                        if (context is AccountActivity) {
+                            context.finish()
+                        }
+                    }) {
+                        Icon(imageVector = Icons.Default.Close, contentDescription = "Log out")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+            // Header Section
+            Text(
+                text = "Hello, ${userData?.name ?: "User"}!",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Reminders Section
-        Text(
-            text = "Reminders",
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+            // Calendar Section
+            CalendarWidget()
 
-        when {
-            isLoadingAppointments -> Text(text = "Loading appointments...")
-            appointmentErrorMessage != null -> Text(text = appointmentErrorMessage!!)
-            appointments.isEmpty() -> Text(text = "No appointments found.")
-            else -> {
-                appointments.forEach { appointment ->
-                    ReminderItem(
-                        title = appointment.vaccineId,
-                        date = appointment.appointmentDate.toDate().toString()
-                    )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Reminders Section
+            Text(
+                text = "Reminders",
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            when {
+                isLoadingAppointments -> Text(text = "Loading appointments...")
+                appointmentErrorMessage != null -> Text(text = appointmentErrorMessage!!)
+                appointments.isEmpty() -> Text(text = "No appointments found.")
+                else -> {
+                    appointments.forEach { appointment ->
+                        ReminderItem(
+                            title = appointment.vaccineId,
+                            date = appointment.appointmentDate.toDate().toString()
+                        )
+                    }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Footer with Logout Button
-        LogoutButton()
     }
 }
 
@@ -296,7 +319,6 @@ fun ReminderItem(title: String, date: String) {
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Icon Section
         Icon(
             imageVector = Icons.Default.DateRange,
             contentDescription = "Calendar Icon",
@@ -306,7 +328,6 @@ fun ReminderItem(title: String, date: String) {
             tint = MaterialTheme.colorScheme.primary
         )
 
-        // Text Section
         Column {
             Text(
                 text = title,
@@ -327,17 +348,34 @@ fun ReminderItem(title: String, date: String) {
 fun LogoutButton() {
     val context = LocalContext.current
 
-    IconButton(onClick = {
-        FirebaseAuth.getInstance().signOut()
-        val intent = Intent(context, LoginActivity::class.java)
-        context.startActivity(intent)
+    // Button to log out with text and icon
+    Button(
+        onClick = {
+            // Sign out logic
+            FirebaseAuth.getInstance().signOut()
 
-        // Optionally, finish the current activity to prevent back navigation
-        if (context is AccountActivity) {
-            context.finish()
-        }
-    }) {
-        Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
+            // Redirect to login screen
+            val intent = Intent(context, LoginActivity::class.java)
+            context.startActivity(intent)
+
+            // Optionally, finish the current activity to prevent back navigation
+            if (context is AccountActivity) {
+                context.finish()
+            }
+        },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF007BFF), // Customize color
+            contentColor = Color.White
+        ),
+        modifier = Modifier
+            .padding(16.dp) // Adds padding from the edges of the parent container
+            .sizeIn(minWidth = 120.dp, minHeight = 50.dp) // Defines minimum size for the button
+        //.align(Alignment.TopEnd) // Align the button to the top-right corner of its parent container (Scaffold)
+
+    ) {
+        Icon(Icons.Default.ExitToApp, contentDescription = "Log out")
+        Spacer(modifier = Modifier.width(8.dp)) // Add space between icon and text
+        Text(text = "Log Out", fontWeight = FontWeight.Bold, fontSize = 14.sp) // Text next to the icon
     }
 }
 @Composable
