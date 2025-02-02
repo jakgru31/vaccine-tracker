@@ -5,7 +5,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 //TODO LOads users data to console
 class UserRepository {
-    private val db = FirebaseFirestore.getInstance()
 
     fun fetchUserData(userId: String, callback: (User?) -> Unit) {
         val db = FirebaseFirestore.getInstance()

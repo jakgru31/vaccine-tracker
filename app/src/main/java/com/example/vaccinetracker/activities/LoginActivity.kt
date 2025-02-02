@@ -282,8 +282,8 @@ fun LogInScreen(
             fontSize = 16.sp,
             textAlign = TextAlign.Center
         )*/
-    }
 }
+
 
 fun validate(email: String, password: String): Boolean {
     return email.isNotBlank() && password.isNotBlank()

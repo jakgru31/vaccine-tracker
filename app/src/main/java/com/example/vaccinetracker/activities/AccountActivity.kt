@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
@@ -360,6 +361,8 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
         ) {
             Text("Make Appointment", color = Color.White)
         }
+
+
 
         if (showErrorDialog) {
             AlertDialog(
