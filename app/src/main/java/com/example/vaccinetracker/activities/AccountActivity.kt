@@ -66,6 +66,19 @@ import java.util.Calendar
 import android.graphics.Color as AndroidColor
 import androidx.compose.ui.graphics.Color as ComposeColor
 import java.util.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.unit.sp
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.TextStyle
+import java.util.Locale
 // Ensure this import is present
 
 //import userMakesVaccination
@@ -214,6 +227,10 @@ fun HomeScreen() {
             }
             else -> Text(text = "No data available.")
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        CalendarWidget()
     }
 }
 
@@ -234,7 +251,90 @@ fun LogoutButton() {
         Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
     }
 }
+@Composable
+fun CalendarWidget() {
+    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+    val currentDate = remember { LocalDate.now() }
+    val daysInMonth = currentMonth.lengthOfMonth()
+    val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek.value % 7
+    val selectedDate = remember { mutableStateOf<LocalDate?>(null) }
 
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Previous Month")
+            }
+            Text(
+                text = "${currentMonth.month.getDisplayName(TextStyle.FULL, Locale.US)} ${currentMonth.year}",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
+                Icon(Icons.Default.ArrowForward, contentDescription = "Next Month")
+            }
+        }
+
+        Canvas(modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp)
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    val dayWidth = size.width / 7
+                    val dayHeight = size.height / 6
+                    val column = (offset.x / dayWidth).toInt()
+                    val row = (offset.y / dayHeight).toInt()
+                    val day = row * 7 + column - firstDayOfMonth + 1
+                    if (day in 1..daysInMonth) {
+                        selectedDate.value = currentMonth.atDay(day)
+                    }
+                }
+            }
+        ) {
+            val dayWidth = size.width / 7
+            val dayHeight = size.height / 6
+
+            for (day in 1..daysInMonth) {
+                val column = (day + firstDayOfMonth - 1) % 7
+                val row = (day + firstDayOfMonth - 1) / 7
+                val x = column * dayWidth
+                val y = row * dayHeight
+
+                drawContext.canvas.nativeCanvas.apply {
+                    drawText(
+                        day.toString(),
+                        x + dayWidth / 2,
+                        y + dayHeight / 2,
+                        android.graphics.Paint().apply {
+                            textAlign = android.graphics.Paint.Align.CENTER
+                            textSize = 40f
+                            color = if (selectedDate.value?.dayOfMonth == day) {
+                                android.graphics.Color.RED
+                            } else {
+                                android.graphics.Color.BLACK
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        selectedDate.value?.let {
+            Text(
+                text = "Selected Date: ${it.dayOfMonth} ${it.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${it.year}",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+        }
+    }
+}
 
 @Composable
 fun VaccinesScreen(coroutineScope: CoroutineScope) {

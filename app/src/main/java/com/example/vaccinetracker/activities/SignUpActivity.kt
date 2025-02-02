@@ -80,6 +80,7 @@ fun RegistrationScreen(
     val month = calendar.get(Calendar.MONTH)
     val day = calendar.get(Calendar.DAY_OF_MONTH)
 
+     @SuppressLint("SuspiciousIndentation")
      fun registerUser() {
         if (email.isBlank() || password != confirmPassword || name.isBlank() || dob.isBlank() || selectedGender.isBlank()) {
             errorMessage = "Please fill out all fields correctly."
