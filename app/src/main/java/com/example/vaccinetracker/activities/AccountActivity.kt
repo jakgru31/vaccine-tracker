@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.Color as ComposeColor
 import java.util.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
@@ -75,6 +76,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.drawText
@@ -386,6 +388,7 @@ fun CalendarWidget(appointments: List<Appointment>) {
     val daysInMonth = currentMonth.lengthOfMonth()
     val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek.value % 7
     val selectedDate = remember { mutableStateOf<LocalDate?>(null) }
+    val colorScheme = MaterialTheme.colorScheme
 
     // Extract appointment days for the current month
     val appointmentDays = appointments.mapNotNull { vaccine ->
@@ -395,6 +398,14 @@ fun CalendarWidget(appointments: List<Appointment>) {
             .takeIf { it.year == currentMonth.year && it.month == currentMonth.month }
     }.map { it.dayOfMonth }
 
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .background(colorScheme.surface, shape = RoundedCornerShape(8.dp))
+            .border(1.dp, colorScheme.onSurface, shape = RoundedCornerShape(8.dp))
+            .padding(16.dp)
+    ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -462,24 +473,13 @@ fun CalendarWidget(appointments: List<Appointment>) {
                         android.graphics.Paint().apply {
                             textAlign = android.graphics.Paint.Align.CENTER
                             textSize = 40f
-                            color = if (selectedDate.value?.dayOfMonth == day) {
-                                android.graphics.Color.RED
-                            } else {
-                                android.graphics.Color.BLACK
-                            }
+                            color = colorScheme.onSurface.toArgb()
                         }
                     )
                 }
             }
         }
-
-        selectedDate.value?.let {
-            Text(
-                text = "Selected Date: ${it.dayOfMonth} ${it.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${it.year}",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 16.dp)
-            )
-        }
+    }
     }
 }
 
@@ -595,18 +595,19 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
 
                 coroutineScope.launch {
                     val success = userMakesAppointment(userId!!, selectedVaccine!!, selectedDate!!)
-                    errorMessage = if (!success) {
-                        "You already have this vaccine or an existing appointment."
+                    if (success) {
+                        sendNotification(context, "Appointment Scheduled", "You  scheduled an appointment for ${selectedDate!!.toDate()} for $selectedVaccine vaccination.")
+                        val notificationTime = selectedDate!!.toDate().time -  24 * 60 * 60 * 1000 // 24 hours before appointment
+                        scheduleNotification(context, notificationTime, "Reminder", "Your appointment for $selectedVaccine is tomorrow.")
                     } else {
-                        "You have successfully booked an appointment for $selectedVaccine on ${selectedDate?.toDate()}"
+                        errorMessage = "Failed to schedule appointment."
+                        showErrorDialog = true
                     }
-                    showErrorDialog = true
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
         ) {
-            Text("Make Appointment", color = Color.White)
+            Text("Make Appointment")
         }
 
 
