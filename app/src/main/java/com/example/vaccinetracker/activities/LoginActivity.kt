@@ -120,7 +120,6 @@ fun LogInScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Sign In Button
         Button(
             onClick = {
                 if (validate(email, password)) {
@@ -167,7 +166,6 @@ fun LogInScreen(
             Text("Sign In", fontSize = 16.sp, fontWeight = FontWeight.Medium)
         }
 
-        // Sign Up Button
         OutlinedButton(
             onClick = onSignUpClick,
             modifier = Modifier.fillMaxWidth(),
@@ -176,12 +174,11 @@ fun LogInScreen(
                 contentColor = Color(0xFFE0B400)
             )
         ) {
-            Text("Sign Up", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            Text("Sign Up")
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.padding(8.dp))
 
-        // Forgot Password Button
         Button(
             onClick = {
                 if (email.isNotBlank()) {
@@ -209,7 +206,6 @@ fun LogInScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Admin Login Button
         Button(
             onClick = {
                 val intent = Intent(context, AdminLogInActivity::class.java)
@@ -225,7 +221,10 @@ fun LogInScreen(
             Text("I am admin", fontSize = 16.sp, fontWeight = FontWeight.Medium)
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        errorMessage?.let {
+            Spacer(modifier = Modifier.padding(8.dp))
+            Text(text = it, color = Color.Red)
+        }
 
         LaunchedEffect(errorMessage, successMessage) {
             if (errorMessage != null || successMessage != null) {
@@ -284,6 +283,7 @@ fun LogInScreen(
             textAlign = TextAlign.Center
         )*/
     }
+}
 
 fun validate(email: String, password: String): Boolean {
     return email.isNotBlank() && password.isNotBlank()
