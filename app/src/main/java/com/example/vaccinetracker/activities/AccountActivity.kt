@@ -1,6 +1,6 @@
 package com.example.vaccinetracker.activities
 
-import addVaccinesToFirestore
+
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
@@ -90,6 +90,8 @@ import java.util.Locale
 
 //import userMakesVaccination
 
+
+
 class AccountActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,28 +107,17 @@ class AccountActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
+    var showSettings by remember { mutableStateOf(false) }
 
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet(
-                modifier = Modifier
-                    .width(LocalConfiguration.current.screenWidthDp.dp * 0.9f)
-            ) {
-                SettingsScreen()
-            }
-        }
-    ) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { Text(text = "Vaccine Tracker (Version 0.8)") },
                     actions = {
                         IconButton(
-                            onClick = { coroutineScope.launch { drawerState.open() } } // Open drawer when clicked
+                            onClick = { showSettings = true }
                         ) {
                             Icon(Icons.Default.Settings, contentDescription = "Settings")
                         }
@@ -139,8 +130,17 @@ fun MainScreen() {
         ) { innerPadding ->
             NavigationHost(navController = navController, modifier = Modifier.padding(innerPadding))
         }
+    if (showSettings) {
+        ModalBottomSheet(
+            onDismissRequest = { showSettings = false }
+        ) {
+            SettingsScreen()
+        }
     }
+
+
 }
+
 
 
 @Composable
@@ -266,12 +266,13 @@ fun HomeScreen() {
             )
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
+            item{
             // Header Section
             Text(
                 text = "Hello, ${userData?.name ?: "User"}!",
@@ -292,13 +293,14 @@ fun HomeScreen() {
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
+            }
 
             when {
-                isLoadingAppointments -> Text(text = "Loading appointments...")
-                appointmentErrorMessage != null -> Text(text = appointmentErrorMessage!!)
-                appointments.isEmpty() -> Text(text = "No appointments found.")
+                isLoadingAppointments -> item{Text(text = "Loading appointments...")}
+                appointmentErrorMessage != null -> item { Text(text = appointmentErrorMessage!!) }
+                appointments.isEmpty() -> item { Text(text = "No appointments found.") }
                 else -> {
-                    appointments.forEach { appointment ->
+                    items(appointments) { appointment ->
                         ReminderItem(
                             title = appointment.vaccineId,
                             date = appointment.appointmentDate.toDate().toString()
