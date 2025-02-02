@@ -271,13 +271,15 @@ suspend fun loadAppointmentsForOneUser(userId: String): List<Appointment> {
             .get()
             .await()
 
-        // Map the documents to Appointment objects
+        // Map the documents to Appointment objects and sort by appointmentDate
         snapshot.documents.mapNotNull { it.toObject(Appointment::class.java) }
+            .sortedBy { it.appointmentDate } // Sort appointments by date (ascending order)
     } catch (e: Exception) {
         e.printStackTrace()
         println("Error fetching appointments: ${e.message}")
         emptyList()
     }
 }
+
 
 

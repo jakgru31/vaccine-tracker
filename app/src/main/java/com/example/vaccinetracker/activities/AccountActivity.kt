@@ -83,6 +83,7 @@ import com.example.vaccinetracker.collections.Appointment
 import loadAppointmentsForOneUser
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
 // Ensure this import is present
@@ -281,7 +282,7 @@ fun HomeScreen() {
             Spacer(modifier = Modifier.height(8.dp))
 
             // Calendar Section
-            CalendarWidget()
+            CalendarWidget(appointments)
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -377,12 +378,20 @@ fun LogoutButton() {
     }
 }
 @Composable
-fun CalendarWidget() {
+fun CalendarWidget(appointments: List<Appointment>) {
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     val currentDate = remember { LocalDate.now() }
     val daysInMonth = currentMonth.lengthOfMonth()
     val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek.value % 7
     val selectedDate = remember { mutableStateOf<LocalDate?>(null) }
+
+    // Extract appointment days for the current month
+    val appointmentDays = appointments.mapNotNull { vaccine ->
+        vaccine.appointmentDate.toInstant()
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+            .takeIf { it.year == currentMonth.year && it.month == currentMonth.month }
+    }.map { it.dayOfMonth }
 
     Column(
         modifier = Modifier
@@ -407,21 +416,22 @@ fun CalendarWidget() {
             }
         }
 
-        Canvas(modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp)
-            .pointerInput(Unit) {
-                detectTapGestures { offset ->
-                    val dayWidth = size.width / 7
-                    val dayHeight = size.height / 6
-                    val column = (offset.x / dayWidth).toInt()
-                    val row = (offset.y / dayHeight).toInt()
-                    val day = row * 7 + column - firstDayOfMonth + 1
-                    if (day in 1..daysInMonth) {
-                        selectedDate.value = currentMonth.atDay(day)
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures { offset ->
+                        val dayWidth = size.width / 7
+                        val dayHeight = size.height / 6
+                        val column = (offset.x / dayWidth).toInt()
+                        val row = (offset.y / dayHeight).toInt()
+                        val day = row * 7 + column - firstDayOfMonth + 1
+                        if (day in 1..daysInMonth) {
+                            selectedDate.value = currentMonth.atDay(day)
+                        }
                     }
                 }
-            }
         ) {
             val dayWidth = size.width / 7
             val dayHeight = size.height / 6
@@ -429,14 +439,24 @@ fun CalendarWidget() {
             for (day in 1..daysInMonth) {
                 val column = (day + firstDayOfMonth - 1) % 7
                 val row = (day + firstDayOfMonth - 1) / 7
-                val x = column * dayWidth
-                val y = row * dayHeight
+                val x = column * dayWidth + dayWidth / 2
+                val y = row * dayHeight + dayHeight / 2
 
+                // Draw circle highlight for appointment days
+                if (day in appointmentDays) {
+                    drawCircle(
+                        color = Color.Yellow,
+                        radius = minOf(dayWidth, dayHeight) / 3,
+                        center = androidx.compose.ui.geometry.Offset(x, y)
+                    )
+                }
+
+                // Draw day number
                 drawContext.canvas.nativeCanvas.apply {
                     drawText(
                         day.toString(),
-                        x + dayWidth / 2,
-                        y + dayHeight / 2,
+                        x,
+                        y + 15f, // Adjust vertical position slightly for alignment
                         android.graphics.Paint().apply {
                             textAlign = android.graphics.Paint.Align.CENTER
                             textSize = 40f
