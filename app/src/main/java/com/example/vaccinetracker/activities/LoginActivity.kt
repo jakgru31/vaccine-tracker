@@ -165,7 +165,7 @@ fun LogInScreen(
             ),
             modifier = Modifier.focusGroup()
         ) {
-            Text("I am admin")
+            Text("I am a Doctor")
         }
 
         errorMessage?.let {

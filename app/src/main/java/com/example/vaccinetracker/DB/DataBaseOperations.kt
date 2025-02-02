@@ -23,46 +23,46 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 
 //TODO Works
-suspend fun addNewUserToDatabase(user: User): Boolean { // Return success/failure
-    val db = FirebaseFirestore.getInstance()
-    val auth = FirebaseAuth.getInstance()
-
-    try {
-        val userCredential = auth.createUserWithEmailAndPassword(user.email, user.password).await()
-        val firebaseUser: FirebaseUser = userCredential.user!!
-        val uid = firebaseUser.uid
-
-        user.id = uid
-        db.collection("users").document(uid).set(user).await()
-
-        println("User added successfully")
-        return true // Success
-
-    } catch (e: Exception) {
-        val errorMessage = when (e) {
-            is com.google.firebase.firestore.FirebaseFirestoreException -> {
-                when (e.code) {
-                    com.google.firebase.firestore.FirebaseFirestoreException.Code.FAILED_PRECONDITION -> "Document already exists."
-                    com.google.firebase.firestore.FirebaseFirestoreException.Code.ALREADY_EXISTS -> "User with this email already exists." // More specific
-                    else -> "Firestore error: ${e.message}"
-                }
-            }
-            is FirebaseAuthException -> { // Handle FirebaseAuth exceptions
-                when (e.errorCode) {
-                    "ERROR_INVALID_EMAIL" -> "Invalid email format."
-                    "ERROR_WEAK_PASSWORD" -> "Password too weak."
-                    "ERROR_EMAIL_ALREADY_IN_USE" -> "Email already in use."
-                    else -> "Authentication error: ${e.message}"
-                }
-            }
-
-            else -> "Error adding user: ${e.message}"
-
-        }
-        println("Error adding user: $errorMessage")
-        return false // Failure
-    }
-}
+//suspend fun addNewUserToDatabase(user: User): Boolean { // Return success/failure
+//    val db = FirebaseFirestore.getInstance()
+//    val auth = FirebaseAuth.getInstance()
+//
+//    try {
+//        val userCredential = auth.createUserWithEmailAndPassword(user.email, user.password).await()
+//        val firebaseUser: FirebaseUser = userCredential.user!!
+//        val uid = firebaseUser.uid
+//
+//        user.id = uid
+//        db.collection("users").document(uid).set(user).await()
+//
+//        println("User added successfully")
+//        return true // Success
+//
+//    } catch (e: Exception) {
+//        val errorMessage = when (e) {
+//            is com.google.firebase.firestore.FirebaseFirestoreException -> {
+//                when (e.code) {
+//                    com.google.firebase.firestore.FirebaseFirestoreException.Code.FAILED_PRECONDITION -> "Document already exists."
+//                    com.google.firebase.firestore.FirebaseFirestoreException.Code.ALREADY_EXISTS -> "User with this email already exists." // More specific
+//                    else -> "Firestore error: ${e.message}"
+//                }
+//            }
+//            is FirebaseAuthException -> { // Handle FirebaseAuth exceptions
+//                when (e.errorCode) {
+//                    "ERROR_INVALID_EMAIL" -> "Invalid email format."
+//                    "ERROR_WEAK_PASSWORD" -> "Password too weak."
+//                    "ERROR_EMAIL_ALREADY_IN_USE" -> "Email already in use."
+//                    else -> "Authentication error: ${e.message}"
+//                }
+//            }
+//
+//            else -> "Error adding user: ${e.message}"
+//
+//        }
+//        println("Error adding user: $errorMessage")
+//        return false // Failure
+//    }
+//}
 
 //TODO Works
 // A vaccination Record is created and stored as well as its id in the users vaccination records list

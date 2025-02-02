@@ -1,5 +1,4 @@
 package com.example.vaccinetracker.activities
-import addNewUserToDatabase
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import androidx.compose.material3.RadioButton
@@ -31,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.vaccinetracker.collections.User
 import com.example.vaccinetracker.ui.theme.VaccineTrackerTheme
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -62,6 +62,7 @@ fun RegistrationScreen(
 ) {
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
+    val db = FirebaseFirestore.getInstance()
 
     var name by remember { mutableStateOf("") }
     var surname by remember { mutableStateOf("") }
@@ -100,44 +101,35 @@ fun RegistrationScreen(
             return
         }
 
-         val newUser = User(
-             id = "",
-             email = email.trim(),
-             password = password.trim(),
-             name = name,
-             surname = surname,
-             gender = selectedGender,
-             dateOfBirth = dob,
-             vaccinationRecords= mutableListOf(),
-             appointments = mutableListOf()
-         )
-
-         CoroutineScope(Dispatchers.IO).launch {
-             val registrationSuccessful = addNewUserToDatabase(newUser) // Use the return value!
-             withContext(Dispatchers.Main) {
-                 if (registrationSuccessful) {
-                     successMessage = "Registration successful!"
-                     onSignUpSuccess() // Only navigate on success
+         auth.createUserWithEmailAndPassword(email.trim(), password.trim())
+             .addOnCompleteListener { task ->
+                 if (task.isSuccessful) {
+                     val userId = auth.currentUser?.uid ?:
+                     return@addOnCompleteListener
+                     val user = User(
+                         id = userId,
+                         email = email.trim(),
+                         name = name,
+                         surname = surname,
+                         dateOfBirth = dob,
+                         gender = selectedGender,
+                         vaccinationRecords = mutableListOf(),
+                         appointments = mutableListOf(),
+                         isAdmin = false)
+                        db.collection("users").document(userId).set(user)
+                            .addOnSuccessListener {
+                                successMessage = "Registration successful!"
+                                onSignUpSuccess()
+                            }
+                            .addOnFailureListener { exception ->
+                                errorMessage = "Error registering user: ${exception.message}"
+                            }
+                    } else {
+                        errorMessage = task.exception?.message ?: "Registration failed."
+                    }
                  }
-             }
-         }
 
 
-
-
-/*auth.createUserWithEmailAndPassword(email.trim(), password.trim())
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val newUser = User("", email, password, name, surname, selectedGender,dob, mutableListOf())
-                    addNewUserToDatabase(newUser)
-                    successMessage = "Registration successful!"
-                    onSignUpSuccess()
-                } else {
-                    errorMessage = task.exception?.message ?: "Registration failed."
-                }
-            }.addOnFailureListener { exception ->
-                errorMessage = "Error registering user: ${exception.message}"
-            }*/
     }
     Column(
         modifier = Modifier
