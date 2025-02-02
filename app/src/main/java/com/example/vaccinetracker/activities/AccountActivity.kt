@@ -71,9 +71,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.unit.sp
 import com.example.vaccinetracker.collections.Appointment
@@ -101,17 +103,44 @@ class AccountActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text(text = "Vaccine Tracker (Version 0.1)") })
-        },
-        bottomBar = {
-            BottomNavigationBar(navController = navController)
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val coroutineScope = rememberCoroutineScope()
+
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier
+                    .width(LocalConfiguration.current.screenWidthDp.dp * 0.9f)
+
+            ) {
+                SettingsScreen()
+            }
         }
-    ) { innerPadding ->
-        NavigationHost(navController = navController, modifier = Modifier.padding(innerPadding))
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(text = "Vaccine Tracker (Version 0.1)") },
+                    actions = {
+                        IconButton(
+                            onClick = { coroutineScope.launch { drawerState.open() } } // Open drawer when clicked
+                        ) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                BottomNavigationBar(navController = navController)
+            }
+        ) { innerPadding ->
+            NavigationHost(navController = navController, modifier = Modifier.padding(innerPadding))
+        }
     }
 }
+
 
 @Composable
 fun NavigationHost(navController: NavHostController, modifier: Modifier) {
@@ -120,6 +149,7 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier) {
         composable("home") { HomeScreen() }
         composable("vaccines") { VaccinesScreen(coroutineScope = coroutineScope)}
         composable("certificates") { CertificatesScreen() }
+        composable("settings") { SettingsScreen() }
     }
 }
 
@@ -762,6 +792,116 @@ fun generateQRCodeBitmap(data: String): Bitmap? {
 }
 
 
+@Composable
+fun SettingsScreen() {
+    val context = LocalContext.current
+    var newName by remember { mutableStateOf("") }
+    var newSurname by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var newPasswordConfirm by remember { mutableStateOf("") }
+
+    // States for each item expansion
+    var expandedName by remember { mutableStateOf(false) }
+    var expandedPassword by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
+    ) {
+        Text(text = "Settings", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Change Name Section
+        LazyColumn {
+            item {
+                ListItem(
+                    headlineContent = { Text("Change Name") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expandedName = !expandedName }
+                )
+                if (expandedName) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        TextField(
+                            value = newName,
+                            onValueChange = { newName = it },
+                            label = { Text("New Name") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        TextField(
+                            value = newSurname,
+                            onValueChange = { newSurname = it },
+                            label = { Text("New Surname") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Button(onClick = {
+                            if (newName.isNotEmpty() && newSurname.isNotEmpty()) {
+                                val userId = FirebaseAuth.getInstance().currentUser?.uid
+                                if (userId != null) {
+                                    val db = FirebaseFirestore.getInstance()
+                                    db.collection("users").document(userId)
+                                        .update(mapOf("name" to newName, "surname" to newSurname))
+                                        .addOnSuccessListener {
+                                            Toast.makeText(context, "Name updated", Toast.LENGTH_SHORT).show()
+                                        }
+                                }
+                            }
+                        }) {
+                            Text("Update Name")
+                        }
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                // Change Password Section
+                ListItem(
+                    headlineContent = { Text("Change Password") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expandedPassword = !expandedPassword }
+                )
+                if (expandedPassword) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        TextField(
+                            value = newPassword,
+                            onValueChange = { newPassword = it },
+                            label = { Text("New Password") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        TextField(
+                            value = newPasswordConfirm,
+                            onValueChange = { newPasswordConfirm = it },
+                            label = { Text("Confirm New Password") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Button(onClick = {
+                            if (newPassword.isNotEmpty() && newPassword == newPasswordConfirm && passwordValidator(newPassword)) {
+                                val user = FirebaseAuth.getInstance().currentUser
+                                user?.updatePassword(newPassword)
+                                    ?.addOnSuccessListener {
+                                        Toast.makeText(context, "Password updated", Toast.LENGTH_SHORT).show()
+                                    }
+                                    ?.addOnFailureListener {
+                                        Toast.makeText(context, "Failed to update password", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                        }) {
+                            Text("Update Password")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 
 fun Int.ordinalSuffix(): String {
@@ -771,4 +911,9 @@ fun Int.ordinalSuffix(): String {
         3 -> "${this}rd"
         else -> "${this}th"
     }
+}
+
+private fun passwordValidator(password: String): Boolean {
+    val passwordPattern = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#\$%^&*(),.?\":{}|<>])[A-Za-z\\d!@#\$%^&*(),.?\":{}|<>]{8,}$")
+    return passwordPattern.matches(password)
 }
