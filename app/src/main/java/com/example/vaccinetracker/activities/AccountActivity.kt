@@ -76,8 +76,6 @@ class AccountActivity : ComponentActivity() {
             VaccineTrackerTheme {
                 MainScreen()
             }
-
-            //addVaccinesToFirestore()
         }
     }
 }
