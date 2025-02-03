@@ -73,6 +73,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.nativeCanvas
@@ -82,6 +83,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.unit.sp
 import com.example.vaccinetracker.collections.Appointment
+import generateChatBotSuggestions
 import loadAppointmentsForOneUser
 import java.time.LocalDate
 import java.time.YearMonth
@@ -183,7 +185,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                 icon = {
                     when (item) {
                         BottomNavItem.Home -> Icon(Icons.Default.Home, contentDescription = "Home")
-                        BottomNavItem.Vaccines -> Icon(Icons.Default.Check, contentDescription = "Vaccines")
+                        BottomNavItem.Vaccines -> Icon(Icons.Default.Menu, contentDescription = "Vaccines")
                         BottomNavItem.Certificates -> Icon(Icons.Default.Check, contentDescription = "Certificates")
                     }
                 },
@@ -262,7 +264,7 @@ fun HomeScreen() {
                             context.finish()
                         }
                     }) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "Log out")
+                        Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Log out")
                     }
                 }
             )
@@ -493,6 +495,8 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
     val vaccines = remember { mutableStateListOf<Vaccine>() }
     var showVaccineMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    var userQuestion by remember { mutableStateOf("") }
+    var chatbotResponse by remember { mutableStateOf("") }
 
     val listState = rememberLazyListState()
 
@@ -518,44 +522,36 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
             }
     }
 
-    // Scroll down when a vaccine is selected
-    LaunchedEffect(selectedVaccine) {
-        if (selectedVaccine != null) {
-            coroutineScope.launch {
-                listState.animateScrollToItem(index = listState.layoutInfo.totalItemsCount - 1)
-            }
-        }
-    }
-
-    Column(
+    LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "Schedule Your Vaccination",
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
+        item {
+            Text(
+                text = "Schedule Your Vaccination",
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
 
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(
-                onClick = { showVaccineMenu = true },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = selectedVaccine ?: "Select Vaccine")
-            }
+        item {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = { showVaccineMenu = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = selectedVaccine ?: "Select Vaccine")
+                }
 
-            DropdownMenu(
-                expanded = showVaccineMenu,
-                onDismissRequest = { showVaccineMenu = false },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 350.dp) // Enables internal scrolling
-            ) {
-                Column {
+                DropdownMenu(
+                    expanded = showVaccineMenu,
+                    onDismissRequest = { showVaccineMenu = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     vaccines.forEach { vaccine ->
                         DropdownMenuItem(
                             text = { Text(vaccine.name) },
@@ -569,62 +565,94 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            showDateTimePicker(context) { timestamp ->
-                selectedDate = timestamp
+        item {
+            Button(onClick = {
+                showDateTimePicker(context) { timestamp ->
+                    selectedDate = timestamp
+                }
+            }) {
+                Text(
+                    text = selectedDate?.toDate()?.let {
+                        SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(it)
+                    } ?: "Click to Choose Date for Appointment"
+                )
             }
-        }) {
-            Text(
-                text = selectedDate?.toDate()?.let {
-                    SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(it)
-                } ?: "Click to Choose Date for Appointment"
+        }
+
+        item {
+            Button(
+                onClick = {
+                    if (selectedVaccine.isNullOrEmpty() || selectedDate == null) {
+                        errorMessage = "Please select a vaccine and date."
+                        showErrorDialog = true
+                        return@Button
+                    }
+
+                    coroutineScope.launch {
+                        val success = userMakesAppointment(userId!!, selectedVaccine!!, selectedDate!!)
+                        if (success) {
+                            sendNotification(
+                                context,
+                                "Appointment Scheduled",
+                                "You scheduled an appointment for ${selectedDate!!.toDate()} for $selectedVaccine vaccination."
+                            )
+                            val notificationTime = selectedDate!!.toDate().time - 24 * 60 * 60 * 1000
+                            scheduleNotification(context, notificationTime, "Reminder", "Your appointment for $selectedVaccine is tomorrow.")
+                            errorMessage = "Appointment scheduled successfully."
+                            showErrorDialog = true
+                        } else {
+                            errorMessage = "Failed to schedule appointment."
+                            showErrorDialog = true
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Make Appointment")
+            }
+        }
+
+        item {
+            OutlinedTextField(
+                value = userQuestion,
+                onValueChange = { userQuestion = it },
+                label = { Text("Start a chat with the VaccineTracker AI Assistant: ") },
+                modifier = Modifier.fillMaxWidth()
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                if (selectedVaccine.isNullOrEmpty() || selectedDate == null) {
-                    errorMessage = "Please select a vaccine and date."
-                    showErrorDialog = true
-                    return@Button
-                }
-
-                coroutineScope.launch {
-                    val success = userMakesAppointment(userId!!, selectedVaccine!!, selectedDate!!)
-                    if (success) {
-                        sendNotification(context, "Appointment Scheduled", "You  scheduled an appointment for ${selectedDate!!.toDate()} for $selectedVaccine vaccination.")
-                        val notificationTime = selectedDate!!.toDate().time -  24 * 60 * 60 * 1000 // 24 hours before appointment
-                        scheduleNotification(context, notificationTime, "Reminder", "Your appointment for $selectedVaccine is tomorrow.")
-                        errorMessage = "Appointment scheduled successfully."
-                        showErrorDialog = true
-                    } else {
-                        errorMessage = "Failed to schedule appointment."
-                        showErrorDialog = true
+        item {
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        chatbotResponse = generateChatBotSuggestions(userQuestion)
                     }
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("Make Appointment")
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Get Answer")
+            }
         }
 
-
+        if (chatbotResponse.isNotEmpty()) {
+            item {
+                Text("Chatbot: $chatbotResponse", fontWeight = FontWeight.Bold)
+            }
+        }
 
         if (showErrorDialog) {
-            AlertDialog(
-                onDismissRequest = { showErrorDialog = false },
-                title = { Text("Status") },
-                text = { Text(errorMessage) },
-                confirmButton = {
-                    Button(onClick = { showErrorDialog = false }) {
-                        Text("OK")
+            item {
+                AlertDialog(
+                    onDismissRequest = { showErrorDialog = false },
+                    title = { Text("Status") },
+                    text = { Text(errorMessage) },
+                    confirmButton = {
+                        Button(onClick = { showErrorDialog = false }) {
+                            Text("OK")
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }
@@ -677,6 +705,8 @@ fun CertificatesScreen() {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var certificateForQrView by remember { mutableStateOf<String?>(null) }
     var qrCodeVisible by remember { mutableStateOf(false) }
+
+    val listState = rememberLazyListState()
 
     // Fetch user data
     LaunchedEffect(currentUser?.uid) {
@@ -734,44 +764,48 @@ fun CertificatesScreen() {
                 QRCodeView(
                     qrCodeData = certificateForQrView!!,
                     modifier = Modifier
-                        .fillMaxSize()      // Fill the entire screen in fullscreen
-                        .aspectRatio(1f)    // Maintain square aspect ratio (important for QR)
+                        .fillMaxSize()
+                        .aspectRatio(1f)
                         .graphicsLayer(
-                            rotationX = rotationX, // Rotate on X-axis
-                            rotationY = rotationY, // Rotate on Y-axis
-                            rotationZ = rotationZ  // Rotate on Z-axis (default for flat 2D rotation)
+                            rotationX = rotationX,
+                            rotationY = rotationY,
+                            rotationZ = rotationZ
                         )
                 )
             }
         } else {
-            Column(
+            LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Certificates", style = MaterialTheme.typography.headlineMedium)
-                Spacer(modifier = Modifier.height(16.dp))
+                item {
+                    Text(text = "Certificates", style = MaterialTheme.typography.headlineMedium)
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
                 when {
-                    isLoading -> Text(text = "Loading...")
-                    errorMessage != null -> Text(text = errorMessage ?: "An unknown error occurred.")
+                    isLoading -> item { Text(text = "Loading...") }
+                    errorMessage != null -> item { Text(text = errorMessage ?: "An unknown error occurred.") }
                     userData != null -> {
                         if (userData?.vaccinationRecords.isNullOrEmpty()) {
-                            Text(text = "No certificates available.")
+                            item { Text(text = "No certificates available.") }
                         } else {
-                            LazyColumn {
-                                items(userData!!.vaccinationRecords) { vac_rec_id ->
-                                    CertificateItem(
-                                        vac_rec_id = vac_rec_id,
-                                        onClick = {
-                                            certificateForQrView = vac_rec_id // Show QR code for this record
-                                        }
-                                    )
-                                }
+                            items(userData!!.vaccinationRecords) { vac_rec_id ->
+                                CertificateItem(
+                                    vac_rec_id = vac_rec_id,
+                                    onClick = { certificateForQrView = vac_rec_id }
+                                )
                             }
                         }
                     }
-                    else -> Text(text = "No data available.")
+                    else -> item { Text(text = "No data available.") }
                 }
             }
         }
@@ -790,17 +824,25 @@ fun CertificateItem(
         vaccineInfo = getInfo(vac_rec_id) // Fetch vaccine info asynchronously
     }
 
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() } // When clicked, show QR code
-            .padding(vertical = 8.dp)
+            .padding(8.dp)
+            .clickable { onClick() }, // When clicked, show QR code
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        // Displaying the vaccine info
-        if (vaccineInfo != null) {
-            Text(text = "View Certificate: $vaccineInfo")
-        } else {
-            Text(text = "Loading certificate info...")
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = vaccineInfo?.let { "View Certificate: $it" } ?: "Loading certificate info...",
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = Color.Black
+            )
         }
     }
 }

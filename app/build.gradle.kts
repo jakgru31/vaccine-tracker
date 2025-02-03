@@ -78,6 +78,10 @@ dependencies {
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.androidx.foundation.android)
 
+
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+
+
     // Test dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

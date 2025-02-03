@@ -35,8 +35,8 @@ import kotlinx.coroutines.tasks.await
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
@@ -45,12 +45,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-
+import com.google.ai.client.generativeai.GenerativeModel
+import generateChatBotSuggestions
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-
+/**
+ * An Activity that manages user login functionality. It sets the content to a Composable login screen,
+ * handles navigation to other activities, and showcases a Generative AI sample function.
+ */
 class LoginActivity : ComponentActivity() {
+    /**
+     * Called when the activity is first created. Sets up edge-to-edge layout and
+     * composes the login screen. Also triggers the hello2() Generative AI example.
+     *
+     * @param savedInstanceState The saved state of the Activity (if any).
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -71,6 +83,39 @@ class LoginActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Demonstrates usage of the GenerativeModel by making a sample request to generate
+ * content for a given prompt. Runs asynchronously via a coroutine.
+ */
+/*private fun hello2() {
+    val apiKey = "AIzaSyAvvfN8s_uE11KFb3TOnnlU6lHXEDCYh8w" // Replace with your actual API key
+    val generativeModel = GenerativeModel(
+        modelName = "gemini-1.5-flash",
+        apiKey = apiKey
+    )
+
+    val prompt = "Write a magic story about a magical dragon"
+
+    MainScope().launch {
+        try {
+            // Assuming the method to use is 'generateContent', replace with the actual method name as needed
+            val response = generativeModel.generateContent(prompt)
+            println(response.text)
+        } catch (e: Exception) {
+            // Handle exception here
+            e.printStackTrace()
+            println("Error: ${e.message}")
+        }
+    }
+}*/
+
+/**
+ * Shows a login screen that allows a user to sign in, sign up, reset password, or log in as admin.
+ * Calls sign-in success or sign-up click actions after user validation.
+ *
+ * @param onSignUpClick A callback triggered when the user clicks the "Sign Up" button.
+ * @param onSignInSuccess A callback triggered if user login is successful.
+ */
 @Composable
 fun LogInScreen(
     onSignUpClick: () -> Unit,
@@ -148,7 +193,7 @@ fun LogInScreen(
                                     errorMessage = "User not found."
                                 }
                             } else {
-                                //errorMessage = task.exception?.message ?: "Authentication failed"
+                                // errorMessage = task.exception?.message ?: "Authentication failed"
                                 errorMessage = "Incorrect password or email"
                             }
                         }
@@ -264,26 +309,34 @@ fun LogInScreen(
                     )
                 }
             }
-
-            }
         }
+    }
 
-        Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(16.dp))
 
-        /*Text(
-            text = logInStatus,
-            modifier = Modifier.fillMaxWidth(),
-            color = Color(0xFF0073CE),
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center
-        )*/
+    // Text(
+    //     text = logInStatus,
+    //     modifier = Modifier.fillMaxWidth(),
+    //     color = Color(0xFF0073CE),
+    //     fontSize = 16.sp,
+    //     textAlign = TextAlign.Center
+    // )
 }
 
-
+/**
+ * Validates whether email and password are both non-empty strings.
+ *
+ * @param email The user's email provided in the form.
+ * @param password The user's password provided in the form.
+ * @return True if both strings are not blank, otherwise false.
+ */
 fun validate(email: String, password: String): Boolean {
     return email.isNotBlank() && password.isNotBlank()
 }
 
+/**
+ * Composable preview of the LogInScreen for design-time inspection.
+ */
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Preview(showBackground = true)
 @Composable
