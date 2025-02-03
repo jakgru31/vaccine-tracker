@@ -39,7 +39,14 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
+/**
+ * SignUpActivity handles the user registration process for the Vaccine Tracker app.
+ * It sets up the UI and manages user input, validation, and Firebase authentication.
+ */
 class SignUpActivity : ComponentActivity() {
+    /**
+     * Initializes the activity and sets the content to the registration screen.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -56,14 +63,19 @@ class SignUpActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Displays the user registration screen with input fields, validation, and submission functionality.
+ *
+ * @param onSignUpSuccess Callback invoked upon successful registration.
+ */
 @Composable
-fun RegistrationScreen(
-    onSignUpSuccess: () -> Unit = {}
-) {
+fun RegistrationScreen(onSignUpSuccess: () -> Unit = {}) {
+    // Firebase Authentication and Firestore instances
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
     val db = FirebaseFirestore.getInstance()
 
+    // User input states
     var name by remember { mutableStateOf("") }
     var surname by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -80,14 +92,16 @@ fun RegistrationScreen(
     val month = calendar.get(Calendar.MONTH)
     val day = calendar.get(Calendar.DAY_OF_MONTH)
 
-     @SuppressLint("SuspiciousIndentation")
-     fun registerUser() {
+    /**
+     * Validates user input and registers a new user with Firebase Authentication.
+     */
+    @SuppressLint("SuspiciousIndentation")
+    fun registerUser() {
         if (email.isBlank() || password != confirmPassword || name.isBlank() || dob.isBlank() || selectedGender.isBlank()) {
             errorMessage = "Please fill out all fields correctly."
             return
         }
 
-        // Add validation
         if (!emailValidator(email)) {
             errorMessage = "Invalid email format."
             return
@@ -96,51 +110,47 @@ fun RegistrationScreen(
             errorMessage = "Invalid password format. Password must have at least 8 characters, a mix of upper and lowercase, a number and a special character."
             return
         }
-        // Add validation check
         if (!dobValidator(dob)) {
             errorMessage = "Invalid date of birth."
             return
         }
+        if (!nameSurnameValidator(name, surname)) {
+            errorMessage = "Invalid name or surname."
+            return
+        }
 
-         if (!nameSurnameValidator(name, surname)) {
-             errorMessage = "Invalid name or surname."
-             return
-         }
-
-         auth.createUserWithEmailAndPassword(email.trim(), password.trim())
-             .addOnCompleteListener { task ->
-                 if (task.isSuccessful) {
-                     val userId = auth.currentUser?.uid ?:
-                     return@addOnCompleteListener
-                     val user = User(
-                         id = userId,
-                         email = email.trim(),
-                         name = name,
-                         surname = surname,
-                         dateOfBirth = dob,
-                         gender = selectedGender,
-                         vaccinationRecords = mutableListOf(),
-                         appointments = mutableListOf(),
-                         isAdmin = false)
-                        db.collection("users").document(userId).set(user)
-                            .addOnSuccessListener {
-                                successMessage = "Registration successful!"
-                                onSignUpSuccess()
-                            }
-                            .addOnFailureListener { exception ->
-                                errorMessage = "Error registering user: ${exception.message}"
-                            }
-                    } else {
-                        errorMessage = task.exception?.message ?: "Registration failed."
-                    }
-                 }
-
-
+        auth.createUserWithEmailAndPassword(email.trim(), password.trim())
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val userId = auth.currentUser?.uid ?: return@addOnCompleteListener
+                    val user = User(
+                        id = userId,
+                        email = email.trim(),
+                        name = name,
+                        surname = surname,
+                        dateOfBirth = dob,
+                        gender = selectedGender,
+                        vaccinationRecords = mutableListOf(),
+                        appointments = mutableListOf(),
+                        isAdmin = false
+                    )
+                    db.collection("users").document(userId).set(user)
+                        .addOnSuccessListener {
+                            successMessage = "Registration successful!"
+                            onSignUpSuccess()
+                        }
+                        .addOnFailureListener { exception ->
+                            errorMessage = "Error registering user: ${exception.message}"
+                        }
+                } else {
+                    errorMessage = task.exception?.message ?: "Registration failed."
+                }
+            }
     }
+
+    // UI components
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
         Text(
@@ -153,62 +163,28 @@ fun RegistrationScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("First Name") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
+        // Input fields for user details
+        TextField(value = name, onValueChange = { name = it }, label = { Text("First Name") }, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextField(
-            value = surname,
-            onValueChange = { surname = it },
-            label = { Text("Last Name") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
+        TextField(value = surname, onValueChange = { surname = it }, label = { Text("Last Name") }, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth()
-        )
-
+        TextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = dob,
-                onValueChange = { dob = it },
-                label = { Text("Date of Birth") },
-                readOnly = true,
-                modifier = Modifier.weight(1f)
-            )
+        // Date of Birth Picker
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(value = dob, onValueChange = { dob = it }, label = { Text("Date of Birth") }, readOnly = true, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { showDatePicker = true }) {
-                Text("Select Date")
-            }
+            Button(onClick = { showDatePicker = true }) { Text("Select Date") }
         }
 
         if (showDatePicker) {
-            DatePickerDialog(
-                context,
-                { _, selectedYear, selectedMonth, selectedDay ->
-                    dob = "$selectedDay/${selectedMonth + 1}/$selectedYear"
-                    showDatePicker = false
-                },
-                year,
-                month,
-                day
-            ).apply {
+            DatePickerDialog(context, { _, selectedYear, selectedMonth, selectedDay ->
+                dob = "$selectedDay/${selectedMonth + 1}/$selectedYear"
+                showDatePicker = false
+            }, year, month, day).apply {
                 datePicker.maxDate = System.currentTimeMillis()
                 show()
             }
@@ -216,28 +192,14 @@ fun RegistrationScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-        )
-
+        // Password fields
+        TextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
-            label = { Text("Confirm Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-        )
-
+        TextField(value = confirmPassword, onValueChange = { confirmPassword = it }, label = { Text("Confirm Password") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Gender selection
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Gender:")
             Spacer(modifier = Modifier.width(8.dp))
@@ -248,56 +210,68 @@ fun RegistrationScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = { registerUser() },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFFD700),
-                contentColor = Color.Black
-            )
-        ) {
+        // Register button
+        Button(onClick = { registerUser() }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700), contentColor = Color.Black)) {
             Text("Register")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        errorMessage?.let {
-            Text(text = it, color = Color.Red, modifier = Modifier.padding(top = 8.dp))
-        }
-        successMessage?.let {
-            Text(text = it, color = Color.Green, modifier = Modifier.padding(top = 8.dp))
-        }
+        // Error and success messages
+        errorMessage?.let { Text(text = it, color = Color.Red, modifier = Modifier.padding(top = 8.dp)) }
+        successMessage?.let { Text(text = it, color = Color.Green, modifier = Modifier.padding(top = 8.dp)) }
     }
 }
 
+/**
+ * Displays a gender selection radio button.
+ *
+ * @param selectedGender The currently selected gender.
+ * @param label The label for the radio button.
+ * @param onSelect Callback invoked when the radio button is selected.
+ */
 @Composable
 fun GenderRadioButton(selectedGender: String, label: String, onSelect: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        RadioButton(
-            selected = selectedGender == label,
-            onClick = onSelect
-        )
+        RadioButton(selected = selectedGender == label, onClick = onSelect)
         Text(text = label, modifier = Modifier.padding(end = 8.dp))
     }
 }
+
+/**
+ * Validates the name and surname.
+ *
+ * @return true if both name and surname contain only letters.
+ */
 private fun nameSurnameValidator(name: String, surname: String): Boolean {
-    val namePattern = Regex("^[a-zA-Z]+$") // Ensure only letters
+    val namePattern = Regex("^[a-zA-Z]+")
     return namePattern.matches(name) && namePattern.matches(surname)
 }
 
+/**
+ * Validates the email format.
+ *
+ * @return true if the email format is valid.
+ */
 private fun emailValidator(email: String): Boolean {
-    // Ensure the email contains "@" and ".com"
-    return email.contains("@") && email.contains(".com") &&
-            android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    return email.contains("@") && email.contains(".com") && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
 }
 
+/**
+ * Validates the password format.
+ *
+ * @return true if the password meets the complexity requirements.
+ */
 private fun passwordValidator(password: String): Boolean {
-    val passwordPattern = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#\$%^&*(),.?\":{}|<>])[A-Za-z\\d!@#\$%^&*(),.?\":{}|<>]{8,}$")
+    val passwordPattern = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#\$%^&*(),.?\":{}|<>])[A-Za-z\\d!@#\$%^&*(),.?\":{}|<>]{8,}")
     return passwordPattern.matches(password)
 }
 
-
-
+/**
+ * Validates the date of birth to ensure the user is 18 years or older.
+ *
+ * @return true if the user is 18 years or older.
+ */
 private fun dobValidator(dob: String): Boolean {
     val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val dobDate = sdf.parse(dob)
@@ -308,20 +282,20 @@ private fun dobValidator(dob: String): Boolean {
     return (currentYear - yearOfBirth > 18) || (currentYear - yearOfBirth == 18 && calendar.get(Calendar.DAY_OF_YEAR) <= Calendar.getInstance().get(Calendar.DAY_OF_YEAR))
 }
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+/**
+ * A placeholder coroutine function.
+ */
+suspend fun doS() {}
+
+/**
+ * Preview for the RegistrationScreen composable.
+ */
 @Preview(showBackground = true)
 @Composable
 fun RegistrationScreenPreview() {
     VaccineTrackerTheme {
-        Scaffold { innerPadding ->
-            RegistrationScreen(
-                onSignUpSuccess = {}
-            )
+        Scaffold {
+            RegistrationScreen(onSignUpSuccess = {})
         }
     }
-}
-
-suspend fun doS()
-{
-
 }

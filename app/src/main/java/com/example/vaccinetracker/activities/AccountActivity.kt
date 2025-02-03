@@ -1,11 +1,9 @@
 package com.example.vaccinetracker.activities
 
-
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-//import android.graphics.Color
 import androidx.compose.ui.graphics.Color
 import android.os.Bundle
 import android.util.Log
@@ -62,7 +60,6 @@ import userMakesVaccination
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.util.Calendar
-//import androidx.compose.ui.graphics.Color // Add this import
 import android.graphics.Color as AndroidColor
 import androidx.compose.ui.graphics.Color as ComposeColor
 import java.util.*
@@ -90,12 +87,8 @@ import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
-// Ensure this import is present
 
-//import userMakesVaccination
-
-
-
+// Main activity for the Account screen
 class AccountActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,6 +100,7 @@ class AccountActivity : ComponentActivity() {
     }
 }
 
+// Main composable screen that includes top app bar, bottom navigation, and content navigation
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
@@ -115,38 +109,37 @@ fun MainScreen() {
     val context = LocalContext.current
     var showSettings by remember { mutableStateOf(false) }
 
-
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(text = "Vaccine Tracker") },
-                    actions = {
-                        IconButton(
-                            onClick = { showSettings = true }
-                        ) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
-                        }
-                        IconButton(onClick = {
-                            FirebaseAuth.getInstance().signOut()
-                            val intent = Intent(context, LoginActivity::class.java)
-                            context.startActivity(intent)
-
-                            if (context is AccountActivity) {
-                                context.finish()
-                            }
-                        }) {
-                            Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Log out")
-                        }
-
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(text = "Vaccine Tracker") },
+                actions = {
+                    IconButton(
+                        onClick = { showSettings = true }
+                    ) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
-                )
-            },
-            bottomBar = {
-                BottomNavigationBar(navController = navController)
-            }
-        ) { innerPadding ->
-            NavigationHost(navController = navController, modifier = Modifier.padding(innerPadding))
+                    IconButton(onClick = {
+                        FirebaseAuth.getInstance().signOut()
+                        val intent = Intent(context, LoginActivity::class.java)
+                        context.startActivity(intent)
+
+                        if (context is AccountActivity) {
+                            context.finish()
+                        }
+                    }) {
+                        Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Log out")
+                    }
+
+                }
+            )
+        },
+        bottomBar = {
+            BottomNavigationBar(navController = navController)
         }
+    ) { innerPadding ->
+        NavigationHost(navController = navController, modifier = Modifier.padding(innerPadding))
+    }
     if (showSettings) {
         ModalBottomSheet(
             onDismissRequest = { showSettings = false }
@@ -154,12 +147,9 @@ fun MainScreen() {
             SettingsScreen()
         }
     }
-
-
 }
 
-
-
+// Composable to handle navigation between different screens
 @Composable
 fun NavigationHost(navController: NavHostController, modifier: Modifier) {
     val coroutineScope = rememberCoroutineScope()
@@ -171,6 +161,7 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier) {
     }
 }
 
+// Composable for the bottom navigation bar with different items
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
@@ -208,12 +199,14 @@ fun BottomNavigationBar(navController: NavHostController) {
     }
 }
 
+// Sealed class to define different bottom navigation items
 sealed class BottomNavItem(val route: String, val title: String) {
     object Home : BottomNavItem("home", "Home")
     object Vaccines : BottomNavItem("vaccines", "Vaccines")
     object Certificates : BottomNavItem("certificates", "Certificates")
 }
 
+// Composable for the home screen displaying user data and appointments
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen() {
@@ -229,7 +222,7 @@ fun HomeScreen() {
 
     val context = LocalContext.current
 
-    // Load user data
+    // Load user data from Firestore
     LaunchedEffect(currentUser?.uid) {
         currentUser?.uid?.let { userId ->
             isLoadingUser = true
@@ -248,7 +241,7 @@ fun HomeScreen() {
         }
     }
 
-    // Load appointments
+    // Load appointments for the current user
     LaunchedEffect(currentUser?.uid) {
         currentUser?.uid?.let { userId ->
             isLoadingAppointments = true
@@ -271,28 +264,29 @@ fun HomeScreen() {
                 .padding(16.dp)
         ) {
             item{
-            // Header Section
-            Text(
-                text = "Hello, ${userData?.name ?: "User"}!",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+                // Header section displaying user's name
+                Text(
+                    text = "Hello, ${userData?.name ?: "User"}!",
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            // Calendar Section
-            CalendarWidget(appointments)
+                // Calendar section to display appointments
+                CalendarWidget(appointments)
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            // Reminders Section
-            Text(
-                text = "Reminders",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+                // Reminders section listing upcoming appointments
+                Text(
+                    text = "Reminders",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
             }
 
+            // Conditional rendering of appointments based on loading and error states
             when {
                 isLoadingAppointments -> item{Text(text = "Loading appointments...")}
                 appointmentErrorMessage != null -> item { Text(text = appointmentErrorMessage!!) }
@@ -310,6 +304,7 @@ fun HomeScreen() {
     }
 }
 
+// Composable to display a single reminder item
 @Composable
 fun ReminderItem(title: String, date: String) {
     Row(
@@ -342,7 +337,7 @@ fun ReminderItem(title: String, date: String) {
     }
 }
 
-
+// Composable for a log out button
 @Composable
 fun LogoutButton() {
     val context = LocalContext.current
@@ -369,14 +364,14 @@ fun LogoutButton() {
         modifier = Modifier
             .padding(16.dp) // Adds padding from the edges of the parent container
             .sizeIn(minWidth = 120.dp, minHeight = 50.dp) // Defines minimum size for the button
-        //.align(Alignment.TopEnd) // Align the button to the top-right corner of its parent container (Scaffold)
-
     ) {
         Icon(Icons.Default.ExitToApp, contentDescription = "Log out")
         Spacer(modifier = Modifier.width(8.dp)) // Add space between icon and text
         Text(text = "Log Out", fontWeight = FontWeight.Bold, fontSize = 14.sp) // Text next to the icon
     }
 }
+
+// Composable for displaying a calendar widget with appointments
 @Composable
 fun CalendarWidget(appointments: List<Appointment>) {
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
@@ -394,6 +389,7 @@ fun CalendarWidget(appointments: List<Appointment>) {
             .takeIf { it.year == currentMonth.year && it.month == currentMonth.month }
     }.map { it.dayOfMonth }
 
+    // Box to contain the calendar
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -402,83 +398,87 @@ fun CalendarWidget(appointments: List<Appointment>) {
             .border(1.dp, colorScheme.onSurface, shape = RoundedCornerShape(8.dp))
             .padding(16.dp)
     ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Previous Month")
-            }
-            Text(
-                text = "${currentMonth.month.getDisplayName(TextStyle.FULL, Locale.US)} ${currentMonth.year}",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-            IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
-                Icon(Icons.Default.ArrowForward, contentDescription = "Next Month")
-            }
-        }
-
-        Canvas(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures { offset ->
-                        val dayWidth = size.width / 7
-                        val dayHeight = size.height / 6
-                        val column = (offset.x / dayWidth).toInt()
-                        val row = (offset.y / dayHeight).toInt()
-                        val day = row * 7 + column - firstDayOfMonth + 1
-                        if (day in 1..daysInMonth) {
-                            selectedDate.value = currentMonth.atDay(day)
+                .padding(16.dp)
+        ) {
+            // Row to navigate between months
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Previous Month")
+                }
+                Text(
+                    text = "${currentMonth.month.getDisplayName(TextStyle.FULL, Locale.US)} ${currentMonth.year}",
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
+                    Icon(Icons.Default.ArrowForward, contentDescription = "Next Month")
+                }
+            }
+
+            // Canvas to draw the calendar
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures { offset ->
+                            val dayWidth = size.width / 7
+                            val dayHeight = size.height / 6
+                            val column = (offset.x / dayWidth).toInt()
+                            val row = (offset.y / dayHeight).toInt()
+                            val day = row * 7 + column - firstDayOfMonth + 1
+                            if (day in 1..daysInMonth) {
+                                selectedDate.value = currentMonth.atDay(day)
+                            }
                         }
                     }
-                }
-        ) {
-            val dayWidth = size.width / 7
-            val dayHeight = size.height / 6
+            ) {
+                val dayWidth = size.width / 7
+                val dayHeight = size.height / 6
 
-            for (day in 1..daysInMonth) {
-                val column = (day + firstDayOfMonth - 1) % 7
-                val row = (day + firstDayOfMonth - 1) / 7
-                val x = column * dayWidth + dayWidth / 2
-                val y = row * dayHeight + dayHeight / 2
+                // Loop through days of the month to draw them
+                for (day in 1..daysInMonth) {
+                    val column = (day + firstDayOfMonth - 1) % 7
+                    val row = (day + firstDayOfMonth - 1) / 7
+                    val x = column * dayWidth + dayWidth / 2
+                    val y = row * dayHeight + dayHeight / 2
 
-                // Draw circle highlight for appointment days
-                if (day in appointmentDays) {
-                    drawCircle(
-                        color = Color.Yellow,
-                        radius = minOf(dayWidth, dayHeight) / 3,
-                        center = androidx.compose.ui.geometry.Offset(x, y)
-                    )
-                }
+                    // Draw circle highlight for appointment days
+                    if (day in appointmentDays) {
+                        drawCircle(
+                            color = Color.Yellow,
+                            radius = minOf(dayWidth, dayHeight) / 3,
+                            center = androidx.compose.ui.geometry.Offset(x, y)
+                        )
+                    }
 
-                // Draw day number
-                drawContext.canvas.nativeCanvas.apply {
-                    drawText(
-                        day.toString(),
-                        x,
-                        y + 15f, // Adjust vertical position slightly for alignment
-                        android.graphics.Paint().apply {
-                            textAlign = android.graphics.Paint.Align.CENTER
-                            textSize = 40f
-                            color = colorScheme.onSurface.toArgb()
-                        }
-                    )
+                    // Draw day number
+                    drawContext.canvas.nativeCanvas.apply {
+                        drawText(
+                            day.toString(),
+                            x,
+                            y + 15f, // Adjust vertical position slightly for alignment
+                            android.graphics.Paint().apply {
+                                textAlign = android.graphics.Paint.Align.CENTER
+                                textSize = 40f
+                                color = colorScheme.onSurface.toArgb()
+                            }
+                        )
+                    }
                 }
             }
         }
-    }
     }
 }
 
+// Composable for the vaccines screen where users can schedule vaccinations
 @Composable
 fun VaccinesScreen(coroutineScope: CoroutineScope) {
     val userId = FirebaseAuth.getInstance().currentUser?.uid
@@ -524,6 +524,7 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Header for the screen
         item {
             Text(
                 text = "Schedule Your Vaccination",
@@ -532,6 +533,7 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
             )
         }
 
+        // Dropdown menu to select a vaccine
         item {
             Box(modifier = Modifier.fillMaxWidth()) {
                 OutlinedButton(
@@ -559,6 +561,7 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
             }
         }
 
+        // Button to select date and time for the appointment
         item {
             Button(onClick = {
                 showDateTimePicker(context) { timestamp ->
@@ -573,6 +576,7 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
             }
         }
 
+        // Button to make the appointment
         item {
             Button(
                 onClick = {
@@ -606,6 +610,7 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
             }
         }
 
+        // Outlined text field for user to type a question
         item {
             OutlinedTextField(
                 value = userQuestion,
@@ -615,6 +620,7 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
             )
         }
 
+        // Button to get a response from the chatbot
         item {
             Button(
                 onClick = {
@@ -628,12 +634,14 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
             }
         }
 
+        // Display chatbot response if available
         if (chatbotResponse.isNotEmpty()) {
             item {
                 Text("Chatbot: $chatbotResponse", fontWeight = FontWeight.Bold)
             }
         }
 
+        // Display error dialog if there is an error message
         if (showErrorDialog) {
             item {
                 AlertDialog(
@@ -651,9 +659,7 @@ fun VaccinesScreen(coroutineScope: CoroutineScope) {
     }
 }
 
-
-
-// Function to show Date and Time Picker
+// Function to show date and time picker dialog
 fun showDateTimePicker(context: Context, onDateSelected: (Timestamp) -> Unit) {
     val calendar = Calendar.getInstance()
     val datePicker = android.app.DatePickerDialog(
@@ -685,11 +691,7 @@ fun showDateTimePicker(context: Context, onDateSelected: (Timestamp) -> Unit) {
     datePicker.show()
 }
 
-
-
-
-
-
+// Composable for the certificates screen displaying user's vaccination certificates
 @Composable
 fun CertificatesScreen() {
     val userRepository = remember { UserRepository() }
@@ -702,7 +704,7 @@ fun CertificatesScreen() {
 
     val listState = rememberLazyListState()
 
-    // Fetch user data
+    // Load user data from Firestore
     LaunchedEffect(currentUser?.uid) {
         currentUser?.uid?.let { userId ->
             isLoading = true
@@ -722,6 +724,7 @@ fun CertificatesScreen() {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // Check if a certificate is selected for QR code view
         if (certificateForQrView != null) {
             // Trigger animation when qrCodeVisible changes
             LaunchedEffect(certificateForQrView) {
@@ -784,6 +787,7 @@ fun CertificatesScreen() {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
+                // Conditional rendering of certificates based on loading and error states
                 when {
                     isLoading -> item { Text(text = "Loading...") }
                     errorMessage != null -> item { Text(text = errorMessage ?: "An unknown error occurred.") }
@@ -806,6 +810,7 @@ fun CertificatesScreen() {
     }
 }
 
+// Composable for displaying a single certificate item
 @Composable
 fun CertificateItem(
     vac_rec_id: String,
@@ -818,6 +823,7 @@ fun CertificateItem(
         vaccineInfo = getInfo(vac_rec_id) // Fetch vaccine info asynchronously
     }
 
+    // Card to represent a certificate item
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -841,6 +847,7 @@ fun CertificateItem(
     }
 }
 
+// Suspend function to fetch vaccine information based on the record ID
 suspend fun getInfo(vac_rec_id: String): String? {
     val db = FirebaseFirestore.getInstance()
     val result = db.collection("vaccination_records")
@@ -851,7 +858,7 @@ suspend fun getInfo(vac_rec_id: String): String? {
     return result.documents.firstOrNull()?.getString("vaccineUid") ?: "Unknown vaccine"
 }
 
-
+// Composable to display a QR code
 @Composable
 fun QRCodeView(qrCodeData: String, modifier: Modifier = Modifier) {
     val qrBitmap = remember { generateQRCodeBitmap(qrCodeData) }
@@ -870,6 +877,7 @@ fun QRCodeView(qrCodeData: String, modifier: Modifier = Modifier) {
     }
 }
 
+// Function to generate a QR code bitmap from given data
 fun generateQRCodeBitmap(data: String): Bitmap? {
     return try {
         val size = 512
@@ -889,7 +897,7 @@ fun generateQRCodeBitmap(data: String): Bitmap? {
     }
 }
 
-
+// Composable for the settings screen where users can change their name and password
 @Composable
 fun SettingsScreen() {
     val context = LocalContext.current
@@ -902,6 +910,7 @@ fun SettingsScreen() {
     var expandedName by remember { mutableStateOf(false) }
     var expandedPassword by remember { mutableStateOf(false) }
 
+    // Column layout for settings items
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -912,7 +921,7 @@ fun SettingsScreen() {
         Text(text = "Settings", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Change Name Section
+        // Card for changing name
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -964,7 +973,7 @@ fun SettingsScreen() {
             }
         }
 
-        // Change Password Section
+        // Card for changing password
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1017,7 +1026,7 @@ fun SettingsScreen() {
     }
 }
 
-
+// Extension function to add ordinal suffix to an integer
 fun Int.ordinalSuffix(): String {
     return when (this % 10) {
         1 -> "${this}st"
@@ -1027,11 +1036,13 @@ fun Int.ordinalSuffix(): String {
     }
 }
 
+// Function to validate the password
 private fun passwordValidator(password: String): Boolean {
     val passwordPattern = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#\$%^&*(),.?\":{}|<>])[A-Za-z\\d!@#\$%^&*(),.?\":{}|<>]{8,}$")
     return passwordPattern.matches(password)
 }
 
+// Function to validate the name and surname
 private fun nameSurnameValidator(name: String, surname: String): Boolean {
     val namePattern = Regex("^[a-zA-Z]+$") // Ensure only letters
     return namePattern.matches(name) && namePattern.matches(surname)

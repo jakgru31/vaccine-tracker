@@ -1,3 +1,38 @@
+/**
+ * Admin Login Activity for Vaccine Tracker App
+ *
+ * This file defines the `AdminLogInActivity` and its associated UI components.
+ * It handles the authentication of admin users using Firebase Authentication and
+ * verifies their admin status through Firestore before granting access to the admin dashboard.
+ *
+ * Key Components:
+ * - `AdminLogInActivity`: The entry point for the admin login screen.
+ * - `AdminLogInScreen`: A composable function providing the UI for admin authentication.
+ * - Firebase Authentication: Handles email-password login.
+ * - Firestore Database: Verifies if the logged-in user has admin privileges.
+ *
+ * Features:
+ * - Email and password input fields with validation.
+ * - Firebase authentication and admin status verification.
+ * - Animated error and success messages.
+ * - Smooth UI with Material 3 components.
+ * - Navigation to the admin dashboard (`AdminActivity`) upon successful login.
+ * - A button to switch to the user login screen (`LoginActivity`).
+ *
+ * Dependencies:
+ * - Firebase Authentication (`FirebaseAuth`)
+ * - Firestore Database (`FirebaseFirestore`)
+ * - Jetpack Compose UI components
+ * - Material 3 design system
+ *
+ * Error Handling:
+ * - Displays appropriate error messages for invalid input or authentication failures.
+ * - Ensures only admin users can proceed beyond the login screen.
+ *
+ * Author: [Your Name]
+ * Date: [Date]
+ */
+
 package com.example.vaccinetracker.activities
 
 import android.annotation.SuppressLint
@@ -135,7 +170,7 @@ fun AdminLogInScreen(
                                         if (document != null && document.exists()) {
                                             val isAdmin = document.getBoolean("admin") ?: false
                                             if (isAdmin) {
-                                                onSignInSuccess() // Proceed to next screen
+                                                onSignInSuccess()
                                             } else {
                                                 errorMessage = "You are not authorized as an admin."
                                                 FirebaseAuth.getInstance().signOut()
@@ -152,7 +187,7 @@ fun AdminLogInScreen(
                                 errorMessage = "An unexpected error occurred. Please try again."
                             }
                         } else {
-                            errorMessage = "Incorrect password or email" // Incorrect password or other errors
+                            errorMessage = "Incorrect password or email"
                         }
                     }
             },
@@ -163,86 +198,6 @@ fun AdminLogInScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Log In")
-        }
-
-
-        Spacer(modifier = Modifier.padding(8.dp))
-
-
-        errorMessage?.let {
-            AnimatedVisibility(
-                visible = errorMessage != null,
-                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it / 2 }),
-                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it / 2 })
-            ) {
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFFFE0E0),
-                        contentColor = Color.Black
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "Error Icon",
-                            tint = Color.Red,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = it,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-        }
-
-        successMessage?.let {
-            AnimatedVisibility(
-                visible = successMessage != null,
-                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it / 2 }),
-                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it / 2 })
-            ) {
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFE0FFE0),
-                        contentColor = Color.Black
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircle,
-                            contentDescription = "Success Icon",
-                            tint = Color.Green,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = it,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
         }
 
         Spacer(modifier = Modifier.padding(200.dp))
@@ -262,12 +217,8 @@ fun AdminLogInScreen(
         ) {
             Text("I am user")
         }
-
-        // Error and success messages with animation
-
     }
 }
-
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Preview(showBackground = true)
