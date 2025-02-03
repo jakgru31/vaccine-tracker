@@ -112,19 +112,32 @@ class AccountActivity : ComponentActivity() {
 fun MainScreen() {
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     var showSettings by remember { mutableStateOf(false) }
 
 
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(text = "Vaccine Tracker (Version 0.8)") },
+                    title = { Text(text = "Vaccine Tracker") },
                     actions = {
                         IconButton(
                             onClick = { showSettings = true }
                         ) {
                             Icon(Icons.Default.Settings, contentDescription = "Settings")
                         }
+                        IconButton(onClick = {
+                            FirebaseAuth.getInstance().signOut()
+                            val intent = Intent(context, LoginActivity::class.java)
+                            context.startActivity(intent)
+
+                            if (context is AccountActivity) {
+                                context.finish()
+                            }
+                        }) {
+                            Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Log out")
+                        }
+
                     }
                 )
             },
@@ -250,26 +263,7 @@ fun HomeScreen() {
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Welcome Back!") },
-                actions = {
-                    IconButton(onClick = {
-                        FirebaseAuth.getInstance().signOut()
-                        val intent = Intent(context, LoginActivity::class.java)
-                        context.startActivity(intent)
-
-                        if (context is AccountActivity) {
-                            context.finish()
-                        }
-                    }) {
-                        Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Log out")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -919,93 +913,109 @@ fun SettingsScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Change Name Section
-        LazyColumn {
-            item {
-                ListItem(
-                    headlineContent = { Text("Change Name") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { expandedName = !expandedName }
-                )
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(6.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expandedName = !expandedName }
+                    .padding(16.dp)
+            ) {
+                Text(text = "Change Name", style = MaterialTheme.typography.bodyLarge)
                 if (expandedName) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        TextField(
-                            value = newName,
-                            onValueChange = { newName = it },
-                            label = { Text("New Name") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        TextField(
-                            value = newSurname,
-                            onValueChange = { newSurname = it },
-                            label = { Text("New Surname") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Button(onClick = {
-                            if (newName.isNotEmpty() && newSurname.isNotEmpty()) {
-                                val userId = FirebaseAuth.getInstance().currentUser?.uid
-                                if (userId != null) {
-                                    val db = FirebaseFirestore.getInstance()
-                                    db.collection("users").document(userId)
-                                        .update(mapOf("name" to newName, "surname" to newSurname))
-                                        .addOnSuccessListener {
-                                            Toast.makeText(context, "Name updated", Toast.LENGTH_SHORT).show()
-                                        }
-                                }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TextField(
+                        value = newName,
+                        onValueChange = { newName = it },
+                        label = { Text("New Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TextField(
+                        value = newSurname,
+                        onValueChange = { newSurname = it },
+                        label = { Text("New Surname") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = {
+                        if (newName.isNotEmpty() && newSurname.isNotEmpty() && nameSurnameValidator(newName, newSurname)) {
+                            val userId = FirebaseAuth.getInstance().currentUser?.uid
+                            if (userId != null) {
+                                val db = FirebaseFirestore.getInstance()
+                                db.collection("users").document(userId)
+                                    .update(mapOf("name" to newName, "surname" to newSurname))
+                                    .addOnSuccessListener {
+                                        Toast.makeText(context, "Name updated", Toast.LENGTH_SHORT).show()
+                                    }
                             }
-                        }) {
-                            Text("Update Name")
+                        } else {
+                            Toast.makeText(context, "Invalid name or surname", Toast.LENGTH_SHORT).show()
                         }
+                    }) {
+                        Text("Update Name")
                     }
                 }
             }
+        }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                // Change Password Section
-                ListItem(
-                    headlineContent = { Text("Change Password") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { expandedPassword = !expandedPassword }
-                )
+        // Change Password Section
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(6.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expandedPassword = !expandedPassword }
+                    .padding(16.dp)
+            ) {
+                Text(text = "Change Password", style = MaterialTheme.typography.bodyLarge)
                 if (expandedPassword) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        TextField(
-                            value = newPassword,
-                            onValueChange = { newPassword = it },
-                            label = { Text("New Password") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        TextField(
-                            value = newPasswordConfirm,
-                            onValueChange = { newPasswordConfirm = it },
-                            label = { Text("Confirm New Password") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Button(onClick = {
-                            if (newPassword.isNotEmpty() && newPassword == newPasswordConfirm && passwordValidator(newPassword)) {
-                                val user = FirebaseAuth.getInstance().currentUser
-                                user?.updatePassword(newPassword)
-                                    ?.addOnSuccessListener {
-                                        Toast.makeText(context, "Password updated", Toast.LENGTH_SHORT).show()
-                                    }
-                                    ?.addOnFailureListener {
-                                        Toast.makeText(context, "Failed to update password", Toast.LENGTH_SHORT).show()
-                                    }
-                            }
-                        }) {
-                            Text("Update Password")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TextField(
+                        value = newPassword,
+                        onValueChange = { newPassword = it },
+                        label = { Text("New Password") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TextField(
+                        value = newPasswordConfirm,
+                        onValueChange = { newPasswordConfirm = it },
+                        label = { Text("Confirm New Password") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = {
+                        if (newPassword.isNotEmpty() && newPassword == newPasswordConfirm && passwordValidator(newPassword)) {
+                            val user = FirebaseAuth.getInstance().currentUser
+                            user?.updatePassword(newPassword)
+                                ?.addOnSuccessListener {
+                                    Toast.makeText(context, "Password updated", Toast.LENGTH_SHORT).show()
+                                }
+                                ?.addOnFailureListener {
+                                    Toast.makeText(context, "Failed to update password", Toast.LENGTH_SHORT).show()
+                                }
+                        } else {
+                            Toast.makeText(context, "Invalid password", Toast.LENGTH_SHORT).show()
                         }
+                    }) {
+                        Text("Update Password")
                     }
                 }
             }
         }
     }
 }
-
 
 
 fun Int.ordinalSuffix(): String {
@@ -1020,4 +1030,9 @@ fun Int.ordinalSuffix(): String {
 private fun passwordValidator(password: String): Boolean {
     val passwordPattern = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#\$%^&*(),.?\":{}|<>])[A-Za-z\\d!@#\$%^&*(),.?\":{}|<>]{8,}$")
     return passwordPattern.matches(password)
+}
+
+private fun nameSurnameValidator(name: String, surname: String): Boolean {
+    val namePattern = Regex("^[a-zA-Z]+$") // Ensure only letters
+    return namePattern.matches(name) && namePattern.matches(surname)
 }

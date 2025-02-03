@@ -102,6 +102,11 @@ fun RegistrationScreen(
             return
         }
 
+         if (!nameSurnameValidator(name, surname)) {
+             errorMessage = "Invalid name or surname."
+             return
+         }
+
          auth.createUserWithEmailAndPassword(email.trim(), password.trim())
              .addOnCompleteListener { task ->
                  if (task.isSuccessful) {
